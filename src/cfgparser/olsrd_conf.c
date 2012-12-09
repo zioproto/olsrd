@@ -175,7 +175,9 @@ static void
 olsrd_print_interface_cnf(struct if_config_options *cnf, struct if_config_options *cnfi, bool defcnf)
 {
   struct olsr_lq_mult *mult;
+  struct olsr_lq_fixed *fixed;
   int lq_mult_cnt = 0;
+  int lq_fixed_cnt = 0;
   char ipv6_buf[INET6_ADDRSTRLEN];                  /* buffer for IPv6 inet_htop */
 
   if (cnf->ipv4_multicast.v4.s_addr) {
@@ -205,6 +207,11 @@ olsrd_print_interface_cnf(struct if_config_options *cnf, struct if_config_option
     lq_mult_cnt++;
     printf("\tLinkQualityMult          : %s %0.2f %s\n", inet_ntop(olsr_cnf->ip_version, &mult->addr, ipv6_buf, sizeof(ipv6_buf)),
       (double)(mult->value) / (double)65536.0, ((lq_mult_cnt > cnf->orig_lq_mult_cnt)?" (d)":""));
+  }
+  for (fixed = cnf->lq_fixed; fixed != NULL; fixed = fixed->next) {
+    lq_fixed_cnt++;
+    printf("\tLinkQualityFixed         : %s %0.2f %s\n", inet_ntop(olsr_cnf->ip_version, &fixed->addr, ipv6_buf, sizeof(ipv6_buf)),
+      (double)(fixed->value) / (double)65536.0, ((lq_fixed_cnt > cnf->orig_lq_fixed_cnt)?" (d)":""));
   }
 
   printf("\tAutodetect changes       : %s%s\n", cnf->autodetect_chg ? "yes" : "no",DEFAULT_STR(autodetect_chg));
