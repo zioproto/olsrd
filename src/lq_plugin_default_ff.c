@@ -236,6 +236,7 @@ default_lq_ff_timer(void __attribute__ ((unused)) * context)
     if (total == 0) {
       tlq->lq.valueLq = 0;
     } else {
+        if (0 /*TODO: link loss fixed is not set for this link*/) {
       // start with link-loss-factor
       ratio = fpmidiv(itofpm(link->loss_link_multiplier), LINK_LOSS_MULTIPLIER);
 
@@ -250,6 +251,11 @@ default_lq_ff_timer(void __attribute__ ((unused)) * context)
       ratio = fpmmuli(ratio, 255);
 
       tlq->lq.valueLq = (uint8_t) (fpmtoi(ratio));
+        } else {
+            // use only link-loss-fixed
+            ratio = fpmidiv(itofpm(link->loss_link_fixed), LINK_LOSS_FIXED);
+            tlq->lq.valueLq = (uint8_t) (fpmtoi(ratio));
+        }
     }
 
     // shift buffer
