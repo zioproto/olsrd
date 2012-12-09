@@ -157,7 +157,7 @@ static int lq_fixed_helper(YYSTYPE ip_addr_arg, YYSTYPE fixed_arg)
   for (i = 0; i < ifs_in_curr_cfg; i++) {
     struct olsr_lq_fixed *fixed = malloc(sizeof(*fixed));
     if (fixed == NULL) {
-      fprintf(stderr, "Out of memory (LQ multiplier).\n");
+      fprintf(stderr, "Out of memory (LQ Fixed).\n");
       return -1;
     }
 
@@ -261,6 +261,7 @@ static int add_ipv6_addr(YYSTYPE ipaddr_arg, YYSTYPE prefixlen_arg)
 %token TOK_LQ_PLUGIN
 %token TOK_LQ_NAT_THRESH
 %token TOK_LQ_MULT
+%token TOK_LQ_FIXED
 %token TOK_CLEAR_SCREEN
 %token TOK_PLPARAM
 %token TOK_MIN_TC_VTIME
@@ -456,6 +457,7 @@ ifstmt:      vcomment
              | isethnaval
              | isetautodetchg
              | isetlqmult
+             | isetlqfixed
 ;
 
 plbody:     TOK_OPEN plstmts TOK_CLOSE
@@ -845,6 +847,30 @@ isetlqmult: TOK_LQ_MULT TOK_DEFAULT TOK_FLOAT
           | TOK_LQ_MULT TOK_IPV6_ADDR TOK_FLOAT
 {
   if (lq_mult_helper($2, $3) < 0) {
+    YYABORT;
+  }
+}
+;
+
+isetlqfixed: TOK_LQ_FIXED TOK_DEFAULT TOK_INTEGER
+
+{
+  //if (lq_fixed_helper($2, $3) < 0) {
+  if ( 0) {
+    YYABORT;
+  }
+}
+
+          | TOK_LQ_FIXED TOK_IPV4_ADDR TOK_FLOAT
+{
+  if ( 0 ) {
+    YYABORT;
+  }
+}
+
+          | TOK_LQ_FIXED TOK_IPV6_ADDR TOK_FLOAT
+{
+  if ( 0) {
     YYABORT;
   }
 }
