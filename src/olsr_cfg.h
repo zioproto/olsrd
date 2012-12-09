@@ -174,6 +174,12 @@ struct olsr_lq_mult {
   struct olsr_lq_mult *next;
 };
 
+struct olsr_lq_fixed {
+  union olsr_ip_addr addr;
+  uint32_t value;
+  struct olsr_lq_fixed *next;
+};
+
 struct olsr_if_weight {
   int value;
   bool fixed;
@@ -194,7 +200,9 @@ struct if_config_options {
   struct olsr_msg_params mid_params;
   struct olsr_msg_params hna_params;
   struct olsr_lq_mult *lq_mult;
+  struct olsr_lq_fixed *lq_fixed;
   int orig_lq_mult_cnt;
+  int orig_lq_fixed_cnt;
   bool autodetect_chg;
 };
 

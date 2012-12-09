@@ -54,6 +54,7 @@
 #define MID_ALIAS_HACK_VTIME  10.0
 
 #define LINK_LOSS_MULTIPLIER (1<<16)
+#define LINK_LOSS_FIXED (1<<16)
 
 struct link_entry {
   union olsr_ip_addr local_iface_addr;
@@ -87,6 +88,9 @@ struct link_entry {
   /* user defined multiplies for link quality, multiplied with 65536 */
   uint32_t loss_link_multiplier;
 
+  /* user defined fixed cost for link quality, multiplied with 65536 */
+  uint32_t loss_link_fixed;
+  
   /* cost of this link */
   olsr_linkcost linkcost;
 

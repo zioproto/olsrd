@@ -131,6 +131,58 @@ static int lq_mult_helper(YYSTYPE ip_addr_arg, YYSTYPE mult_arg)
   return 0;
 }
 
+
+static int lq_fixed_helper(YYSTYPE ip_addr_arg, YYSTYPE fixed_arg)
+{
+  union olsr_ip_addr addr;
+  int i;
+  struct olsr_if *walker;
+
+#if defined PARSER_DEBUG && PARSER_DEBUG > 0
+  printf("\tLinkQualityFixed %s %0.2f\n",
+         (ip_addr_arg != NULL) ? ip_addr_arg->string : "any",
+         (double)fixed_arg->floating);
+#endif
+
+  memset(&addr, 0, sizeof(addr));
+
+  if (ip_addr_arg != NULL &&
+     inet_pton(olsr_cnf->ip_version, ip_addr_arg->string, &addr) <= 0) {
+    fprintf(stderr, "Cannot parse IP address %s.\n", ip_addr_arg->string);
+    return -1;
+  }
+
+  walker = olsr_cnf->interfaces;
+
+  for (i = 0; i < ifs_in_curr_cfg; i++) {
+    struct olsr_lq_fixed *fixed = malloc(sizeof(*fixed));
+    if (fixed == NULL) {
+      fprintf(stderr, "Out of memory (LQ multiplier).\n");
+      return -1;
+    }
+
+    fixed->addr = addr;
+    fixed->value = (uint32_t)(fixed_arg->floating * LINK_LOSS_FIXED);
+
+    fixed->next = walker->cnf->lq_fixed;
+    walker->cnfi->lq_fixed = walker->cnf->lq_fixed = fixed;
+    walker->cnf->orig_lq_fixed_cnt++;
+    walker->cnfi->orig_lq_fixed_cnt=walker->cnf->orig_lq_fixed_cnt;
+
+    walker = walker->next;
+  }
+
+  if (ip_addr_arg != NULL) {
+    free(ip_addr_arg->string);
+    free(ip_addr_arg);
+  }
+
+  free(fixed_arg);
+
+  return 0;
+}
+
+
 static int add_ipv6_addr(YYSTYPE ipaddr_arg, YYSTYPE prefixlen_arg)
 {
   union olsr_ip_addr ipaddr;

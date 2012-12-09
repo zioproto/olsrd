@@ -304,6 +304,7 @@ olsr_create_olsrif(const char *name, int hemu)
   interf_n->cnfi = olsr_malloc(sizeof(*interf_n->cnfi), "queue cnfi");
   memset(interf_n->cnfi, 0xFF, sizeof(*interf_n->cnfi));
   interf_n->cnfi->orig_lq_mult_cnt=0;
+  interf_n->cnfi->orig_lq_fixed_cnt=0;
 
   interf_n->host_emul = hemu ? true : false;
 

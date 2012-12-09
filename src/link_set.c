@@ -355,6 +355,57 @@ set_loss_link_multiplier(struct link_entry *entry)
       olsr_ip_to_string(&buf, &entry->neighbor_iface_addr), cfg_inter->name, val);
 }
 
+
+static void
+set_loss_link_fixed(struct link_entry *entry)
+{
+  struct interface *inter;
+  struct olsr_if *cfg_inter;
+  struct olsr_lq_fixed *fixed;
+  uint32_t val = 0;
+  union olsr_ip_addr null_addr;
+  struct ipaddr_str buf;
+
+  /* find the interface for the link */
+  assert(entry->if_name);
+  inter = if_ifwithname(entry->if_name);
+
+  /* find the interface configuration for the interface */
+  for (cfg_inter = olsr_cnf->interfaces; cfg_inter; cfg_inter = cfg_inter->next) {
+    if (cfg_inter->interf == inter) {
+      break;
+    }
+  }
+  assert(cfg_inter);
+
+  /* create a null address for comparison */
+  memset(&null_addr, 0, sizeof(union olsr_ip_addr));
+
+  /* loop through the fixed cost entries */
+  for (fixed = cfg_inter->cnf->lq_fixed; fixed != NULL; fixed = fixed->next) {
+
+    /*
+     * use the default multiplier only if there isn't any entry that
+     * has a matching IP address.
+     */
+    if ((ipequal(&fixed->addr, &null_addr) && val == 0) || ipequal(&fixed->addr, &entry->neighbor_iface_addr)) {
+      val = fixed->value;
+    }
+  }
+
+  /* if we have not found an entry, then use the default fixed value */
+  if (val == 0) {
+    val = LINK_LOSS_FIXED;
+  }
+
+  /* store the multiplier */
+  entry->loss_link_fixed = val;
+
+  OLSR_PRINTF(1, "Set linkloss fixed for %s on %s to %d\n",
+      olsr_ip_to_string(&buf, &entry->neighbor_iface_addr), cfg_inter->name, val);
+}
+
+
 /*
  * Delete, unlink and free a link entry.
  */
