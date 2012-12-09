@@ -441,6 +441,11 @@ IPV6ADDR {IPV6PAT1}|{IPV6PAT2}|{IPV6PAT3}|{IPV6PAT4}|{IPV6PAT5}|{IPV6PAT6}|{IPV6
     return TOK_LQ_MULT;
 }
 
+"LinkQualityFixed" {
+    yylval = NULL;
+    return TOK_LQ_FIXED;
+}
+
 "MinTCVTime" {
     yylval = NULL;
     return TOK_MIN_TC_VTIME;
