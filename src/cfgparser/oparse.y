@@ -852,7 +852,7 @@ isetlqmult: TOK_LQ_MULT TOK_DEFAULT TOK_FLOAT
 }
 ;
 
-isetlqfixed: TOK_LQ_FIXED TOK_DEFAULT TOK_INTEGER
+isetlqfixed: TOK_LQ_FIXED TOK_DEFAULT TOK_FLOAT
 
 {
   //if (lq_fixed_helper($2, $3) < 0) {
