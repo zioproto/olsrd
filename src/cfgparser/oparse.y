@@ -855,22 +855,21 @@ isetlqmult: TOK_LQ_MULT TOK_DEFAULT TOK_FLOAT
 isetlqfixed: TOK_LQ_FIXED TOK_DEFAULT TOK_FLOAT
 
 {
-  //if (lq_fixed_helper($2, $3) < 0) {
-  if ( 0) {
+  if (lq_fixed_helper($2, $3) < 0) {
     YYABORT;
   }
 }
 
           | TOK_LQ_FIXED TOK_IPV4_ADDR TOK_FLOAT
 {
-  if ( 0 ) {
+  if (lq_fixed_helper($2, $3) < 0) {
     YYABORT;
   }
 }
 
           | TOK_LQ_FIXED TOK_IPV6_ADDR TOK_FLOAT
 {
-  if ( 0) {
+  if (lq_fixed_helper($2, $3) < 0) {
     YYABORT;
   }
 }

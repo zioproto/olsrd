@@ -644,6 +644,7 @@ add_link_entry(const union olsr_ip_addr *local, const union olsr_ip_addr *remote
                    &olsr_expire_link_loss_timer, new_link, 0);
 
     set_loss_link_multiplier(new_link);
+    set_loss_link_fixed(new_link);
   }
 
   new_link->linkcost = LINK_COST_BROKEN;

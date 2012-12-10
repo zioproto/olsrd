@@ -254,6 +254,10 @@ default_lq_ff_timer(void __attribute__ ((unused)) * context)
         } else {
             // use only link-loss-fixed
             ratio = fpmidiv(itofpm(link->loss_link_fixed), LINK_LOSS_FIXED);
+      // calculate received/total factor
+      ratio = fpmmuli(ratio, received);
+      ratio = fpmidiv(ratio, total);
+      ratio = fpmmuli(ratio, 255);
             tlq->lq.valueLq = (uint8_t) (fpmtoi(ratio));
         }
     }
