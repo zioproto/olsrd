@@ -438,7 +438,7 @@ add_hemu_if(struct olsr_if *iface)
      *on what interface the message is transmitted
      */
 
-    ifp->olsr_socket = gethemusocket(&sin);
+    ifp->send_socket = ifp->olsr_socket = gethemusocket(&sin);
 
     if (ifp->olsr_socket < 0) {
       fprintf(stderr, "Could not initialize socket... exiting!\n\n");
