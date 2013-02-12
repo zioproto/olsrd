@@ -76,7 +76,7 @@ my_init(void)
   printf("%s\n", MOD_DESC);
 
   /* defaults for parameters */
-  telnet_port = 2342;
+  telnet_port = 2023;
   if (olsr_cnf->ip_version == AF_INET) {
     telnet_listen_ip.v4.s_addr = htonl(INADDR_ANY);
   } else {

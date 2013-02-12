@@ -20,7 +20,7 @@ futher parameters.
 
 LoadPlugin "olsrd_telnet.so.0.0"
 {
-    # the default port is 2342 but you can change it like this:
+    # the default port is 2023 but you can change it like this:
     #PlParam     "port"   "1234"
 
     # the address to bind the socket to, if omitted the plugin
