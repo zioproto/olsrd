@@ -116,12 +116,3 @@ olsrd_get_plugin_parameters(const struct olsrd_plugin_parameters **params, int *
   *params = plugin_parameters;
   *size = sizeof(plugin_parameters) / sizeof(*plugin_parameters);
 }
-
-/*
- * Local Variables:
- * mode: c
- * style: linux
- * c-basic-offset: 2
- * indent-tabs-mode: nil
- * End:
- */
