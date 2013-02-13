@@ -1,8 +1,12 @@
-
 /*
  * The olsr.org Optimized Link-State Routing daemon(olsrd)
  * Copyright (c) 2004, Andreas Tonnesen(andreto@olsr.org)
  *                     includes code by Bruno Randolf
+ *                     includes code by Andreas Lopatic
+ *                     includes code by Sven-Ola Tuecke
+ *                     includes code by Lorenz Schori
+ *                     includes bugs by Markus Kittenberger
+ *                     includes bugs by Hans-Christoph Steiner
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -44,21 +48,19 @@
  * Dynamic linked library for the olsr.org olsr daemon
  */
 
-#ifndef _OLSRD_TELNET
-#define _OLSRD_TELNET
+#include <string.h>
 
-#include "olsr_types.h"
-#include "olsrd_plugin.h"
-#include "plugin_util.h"
+#include "olsrd_telnet.h"
+#include "cmd_handler.h"
 
-extern union olsr_ip_addr telnet_listen_ip;
-extern int telnet_port;
+void cmd_dispatcher(int c, int argc, char* argv[])
+{
+  char tmp[1000];
 
-int olsrd_plugin_interface_version(void);
-int olsrd_plugin_init(void);
-void olsr_plugin_exit(void);
-void olsrd_get_plugin_parameters(const struct olsrd_plugin_parameters **params, int *size);
+  if(argc < 1)
+    return;
 
-void telnet_client_add_output(int, char*);
-
-#endif /* _OLSRD_TELNET */
+  strcpy(tmp, argv[0]);
+  strcat(tmp, "\r\n");
+  telnet_client_add_output(c, tmp);
+}

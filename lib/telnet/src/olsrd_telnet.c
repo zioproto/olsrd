@@ -77,6 +77,7 @@
 
 #include "olsrd_telnet.h"
 #include "olsrd_plugin.h"
+#include "cmd_handler.h"
 
 #ifdef _WIN32
 #define close(x) closesocket(x)
@@ -92,7 +93,6 @@ static void telnet_action(int, void *, unsigned int);
 static int telnet_client_add(int);
 static void telnet_client_remove(int);
 static int telnet_client_find(int);
-static void telnet_client_add_output(int, char*);
 static void telnet_client_handle_cmd(int, char*);
 static void telnet_client_action(int, void *, unsigned int);
 static void telnet_client_read(int);
@@ -290,8 +290,7 @@ telnet_client_find(int fd)
   return c;
 }
 
-static void
-telnet_client_add_output(int c, char* string)
+void telnet_client_add_output(int c, char* string)
 {
   size_t remaining = sizeof(clients[c].out.buf) - clients[c].out.len;
   size_t len = strlen(string);
@@ -315,10 +314,7 @@ telnet_client_handle_cmd(int c, char* cmd)
   olsr_printf(0, "(TELNET) client %i: received '%s'\n", c, cmd);
 #endif /* NODEBUG */
 
-  char tmp[1000];
-  strcpy(tmp, cmd);
-  strcat(tmp, "\r\n");
-  telnet_client_add_output(c, tmp);
+  cmd_dispatcher(c, 1, &cmd);
 }
 
 static void

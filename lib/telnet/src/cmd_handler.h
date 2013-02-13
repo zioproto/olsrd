@@ -44,21 +44,9 @@
  * Dynamic linked library for the olsr.org olsr daemon
  */
 
-#ifndef _OLSRD_TELNET
-#define _OLSRD_TELNET
+#ifndef _OLSRD_TELNET_CMD_HANDLER
+#define _OLSRD_TELNET_CMD_HANDLER
 
-#include "olsr_types.h"
-#include "olsrd_plugin.h"
-#include "plugin_util.h"
-
-extern union olsr_ip_addr telnet_listen_ip;
-extern int telnet_port;
-
-int olsrd_plugin_interface_version(void);
-int olsrd_plugin_init(void);
-void olsr_plugin_exit(void);
-void olsrd_get_plugin_parameters(const struct olsrd_plugin_parameters **params, int *size);
-
-void telnet_client_add_output(int, char*);
+void cmd_dispatcher(int, int, char**);
 
 #endif /* _OLSRD_TELNET */
