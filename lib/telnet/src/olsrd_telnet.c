@@ -92,8 +92,9 @@ static void telnet_action(int, void *, unsigned int);
 static int telnet_client_add(int);
 static void telnet_client_remove(int);
 static int telnet_client_find(int);
-static void telnet_client_read(int, void *, unsigned int);
-static void telnet_client_write(int, void *, unsigned int);
+static void telnet_client_action(int, void *, unsigned int);
+static void telnet_client_read(int);
+static void telnet_client_write(int);
 
 #define MAX_CLIENTS 3
 #define BUF_SIZE 1024
@@ -263,7 +264,7 @@ static int telnet_client_add(int fd)
       clients[c].out.written = 0;
       clients[c].in.len = 0;
       clients[c].in.written = 0;
-      add_olsr_socket(fd, &telnet_client_read, NULL, NULL, SP_PR_READ);
+      add_olsr_socket(fd, &telnet_client_action, NULL, NULL, SP_PR_READ);
       break;
     }
   }
@@ -272,8 +273,7 @@ static int telnet_client_add(int fd)
 
 static void telnet_client_remove(int c)
 {
-  remove_olsr_socket(clients[c].fd, &telnet_client_read, NULL);
-  remove_olsr_socket(clients[c].fd, &telnet_client_write, NULL);
+  remove_olsr_socket(clients[c].fd, &telnet_client_action, NULL);
   close(clients[c].fd);
   clients[c].fd = -1;
 }
@@ -289,20 +289,28 @@ static int telnet_client_find(int fd)
 }
 
 static void
-telnet_client_read(int fd, void *data __attribute__ ((unused)), unsigned int flags __attribute__ ((unused)))
+telnet_client_action(int fd, void *data __attribute__ ((unused)), unsigned int flags)
 {
-  int c;
-  size_t  old_len, i;
-  ssize_t result;
-
-  c = telnet_client_find(fd);
+  int c = telnet_client_find(fd);
   if(c == MAX_CLIENTS) {        // unknown client...???
-    remove_olsr_socket(fd, &telnet_client_read, NULL);
+    remove_olsr_socket(fd, &telnet_client_action, NULL);
     close(fd);
     return;
   }
+  if(flags & SP_PR_WRITE)
+    telnet_client_write(c);
 
-  result = recv(fd, (void *)&(clients[c].in.buf[clients[c].in.len]), sizeof(clients[c].in.buf) - clients[c].in.len, 0);   /* Win32 needs the cast here */
+  if(flags & SP_PR_READ)
+    telnet_client_read(c);
+}
+
+static void
+telnet_client_read(int c)
+{
+  size_t  old_len, i;
+  ssize_t result;
+
+  result = recv(clients[c].fd, (void *)&(clients[c].in.buf[clients[c].in.len]), sizeof(clients[c].in.buf) - clients[c].in.len, 0);   /* Win32 needs the cast here */
   if (result > 0) {
     old_len = clients[c].in.len;
     clients[c].in.len += result;
@@ -325,7 +333,7 @@ telnet_client_read(int fd, void *data __attribute__ ((unused)), unsigned int fla
         } else {
           clients[c].out.len = snprintf(clients[c].out.buf, sizeof(clients[c].out.buf), "%s\n\r", clients[c].in.buf);
           clients[c].out.written = 0;
-          add_olsr_socket(fd, &telnet_client_write, NULL, NULL, SP_PR_WRITE);
+          enable_olsr_socket(clients[c].fd, &telnet_client_action, NULL, SP_PR_WRITE);
         }
 
         if((i+1) < clients[c].in.len) {
@@ -353,26 +361,18 @@ telnet_client_read(int fd, void *data __attribute__ ((unused)), unsigned int fla
 }
 
 static void
-telnet_client_write(int fd, void *data __attribute__ ((unused)), unsigned int flags __attribute__ ((unused)))
+telnet_client_write(int c)
 {
-  int c;
   ssize_t result;
 
-  c = telnet_client_find(fd);
-  if(c == MAX_CLIENTS) {        // unknown client...???
-    remove_olsr_socket(fd, &telnet_client_write, NULL);
-    close(fd);
-    return;
-  }
-
-  result = send(fd, (void *)&(clients[c].out.buf[clients[c].out.written]), clients[c].out.len - clients[c].out.written, 0);
+  result = send(clients[c].fd, (void *)&(clients[c].out.buf[clients[c].out.written]), clients[c].out.len - clients[c].out.written, 0);
   if (result > 0) {
     clients[c].out.written += result;
     if(clients[c].out.written == clients[c].out.len) {
 #ifndef NODEBUG
       olsr_printf(0, "(TELNET) client %i - all data written\n", c);
 #endif /* NODEBUG */    
-      remove_olsr_socket(fd, &telnet_client_write, NULL);
+      disable_olsr_socket(clients[c].fd, &telnet_client_action, NULL, SP_PR_WRITE);
       clients[c].out.written = clients[c].out.len = 0;
     }
   } else if(result < 0) {
