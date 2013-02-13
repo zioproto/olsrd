@@ -92,6 +92,8 @@ static void telnet_action(int, void *, unsigned int);
 static int telnet_client_add(int);
 static void telnet_client_remove(int);
 static int telnet_client_find(int);
+static void telnet_client_add_output(int, char*);
+static void telnet_client_handle_cmd(int, char*);
 static void telnet_client_action(int, void *, unsigned int);
 static void telnet_client_read(int);
 static void telnet_client_write(int);
@@ -253,7 +255,8 @@ telnet_action(int fd, void *data __attribute__ ((unused)), unsigned int flags __
   }
 }
 
-static int telnet_client_add(int fd)
+static int
+telnet_client_add(int fd)
 {
   int c;
   for(c=0; c < MAX_CLIENTS; c++) {
@@ -268,14 +271,16 @@ static int telnet_client_add(int fd)
   return c;
 }
 
-static void telnet_client_remove(int c)
+static void
+telnet_client_remove(int c)
 {
   remove_olsr_socket(clients[c].fd, &telnet_client_action, NULL);
   close(clients[c].fd);
   clients[c].fd = -1;
 }
 
-static int telnet_client_find(int fd)
+static int
+telnet_client_find(int fd)
 {
   int c;
   for(c=0; c<MAX_CLIENTS; c++) {
@@ -283,6 +288,37 @@ static int telnet_client_find(int fd)
       break;
   }
   return c;
+}
+
+static void
+telnet_client_add_output(int c, char* string)
+{
+  size_t remaining = sizeof(clients[c].out.buf) - clients[c].out.len;
+  size_t len = strlen(string);
+  size_t len_add = remaining >= len ? len : remaining;
+
+  memcpy((void*)&clients[c].out.buf[clients[c].out.len], string, len_add);
+
+  if(!clients[c].out.len)
+    enable_olsr_socket(clients[c].fd, &telnet_client_action, NULL, SP_PR_WRITE);
+
+  clients[c].out.len += len_add;
+}
+
+static void
+telnet_client_handle_cmd(int c, char* cmd)
+{
+  if(!strlen(cmd))
+    return;
+
+#ifndef NODEBUG
+  olsr_printf(0, "(TELNET) client %i: received '%s'\n", c, cmd);
+#endif /* NODEBUG */
+
+  char tmp[1000];
+  strcpy(tmp, cmd);
+  strcat(tmp, "\r\n");
+  telnet_client_add_output(c, tmp);
 }
 
 static void
@@ -301,17 +337,6 @@ telnet_client_action(int fd, void *data __attribute__ ((unused)), unsigned int f
     telnet_client_read(c);
 }
 
-static void telnet_handle_cmd(int c, char* cmd)
-{
-  size_t len = strlen(cmd);
-  if(!len)
-    return;
-
-#ifndef NODEBUG
-  olsr_printf(0, "(TELNET) client %i: received %i bytes\n", c, len);
-#endif /* NODEBUG */    
-}
-
 static void
 telnet_client_read(int c)
 {
@@ -326,19 +351,20 @@ telnet_client_read(int c)
 
     for(;;) {
       char* line_end = strpbrk(&(clients[c].in.buf[offset]), "\n\r");
-      if(line_end != NULL) {
-        *line_end = 0;
-        telnet_handle_cmd(c, clients[c].in.buf);
-        if(line_end >= buf_end) {
-          clients[c].in.len = 0;
-          break;
-        }
+      if(line_end == NULL)
+        break;
 
-        clients[c].in.len = buf_end - line_end;
-        memmove((void *)clients[c].in.buf, line_end+1, clients[c].in.len);
-        buf_end = &(clients[c].in.buf[clients[c].in.len - 1]);
-        offset = 0;
+      *line_end = 0;
+      telnet_client_handle_cmd(c, clients[c].in.buf);
+      if(line_end >= buf_end) {
+        clients[c].in.len = 0;
+        break;
       }
+
+      clients[c].in.len = buf_end - line_end;
+      memmove((void *)clients[c].in.buf, line_end+1, clients[c].in.len);
+      buf_end = &(clients[c].in.buf[clients[c].in.len - 1]);
+      offset = 0;
     }
 
     if(clients[c].in.len >= (sizeof(clients[c].in.buf) - 1)) {
