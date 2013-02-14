@@ -94,6 +94,7 @@ static void telnet_action(int, void *, unsigned int);
 static int telnet_client_add(int);
 static void telnet_client_remove(int);
 static int telnet_client_find(int);
+static void telnet_client_prompt(int);
 static void telnet_client_handle_cmd(int, char*);
 static void telnet_client_action(int, void *, unsigned int);
 static void telnet_client_read(int);
@@ -284,6 +285,12 @@ telnet_action(int fd, void *data __attribute__ ((unused)), unsigned int flags __
   }
 }
 
+static void
+telnet_client_prompt(int c)
+{
+  telnet_client_printf(c, ">  ");
+}
+
 static int
 telnet_client_add(int fd)
 {
@@ -294,6 +301,7 @@ telnet_client_add(int fd)
       clients[c].out.len = 0;
       clients[c].in.len = 0;
       add_olsr_socket(fd, &telnet_client_action, NULL, NULL, SP_PR_READ);
+      telnet_client_prompt(c);
       break;
     }
   }
@@ -336,6 +344,7 @@ telnet_client_handle_cmd(int c, char* cmd)
   }
 
   cmd_dispatcher(c, i, argv);
+  telnet_client_prompt(c);
 }
 
 static void
