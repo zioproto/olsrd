@@ -84,12 +84,9 @@ void cmd_dispatcher(int c, int argc, char* argv[])
   telnet_client_printf(c, "command '%s' unknown\n\r", argv[0]);
 }
 
-static void quit(int c, int argc, char* argv[])
+static void quit(int c, int argc __attribute__ ((unused)), char* argv[] __attribute__ ((unused)))
 {
-  int i;
-  for(i=0; i<argc; ++i) {
-    telnet_client_printf(c, "%2i: %s\n\r", i, argv[i]);
-  }
+  telnet_client_quit(c);
 }
 
 static void help(int c, int argc, char* argv[])

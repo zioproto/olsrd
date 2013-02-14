@@ -62,5 +62,6 @@ void olsr_plugin_exit(void);
 void olsrd_get_plugin_parameters(const struct olsrd_plugin_parameters **params, int *size);
 
 void telnet_client_printf(int, const char*, ...) __attribute__ ((format (printf, 2, 3)));
+void telnet_client_quit(int);
 
 #endif /* _OLSRD_TELNET */

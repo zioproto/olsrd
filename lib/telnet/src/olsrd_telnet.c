@@ -217,6 +217,33 @@ plugin_telnet_init(void)
   return 1;
 }
 
+void telnet_client_quit(int c)
+{
+  telnet_client_remove(c);
+}
+
+void telnet_client_printf(int c, const char* fmt, ...)
+{
+  va_list arg_ptr;
+  ssize_t remaining = sizeof(clients[c].out.buf) - clients[c].out.len;
+  ssize_t ret;
+
+  va_start(arg_ptr, fmt);
+  ret = vsnprintf(&(clients[c].out.buf[clients[c].out.len]), remaining, fmt, arg_ptr);
+  va_end(arg_ptr);
+
+  if(ret <= 0)
+    return;
+
+  if(!clients[c].out.len)
+    enable_olsr_socket(clients[c].fd, &telnet_client_action, NULL, SP_PR_WRITE);
+
+  if(ret < remaining)
+    clients[c].out.len += ret - 1;
+  else
+    clients[c].out.len += remaining - 1;
+}
+
 
 static void
 telnet_action(int fd, void *data __attribute__ ((unused)), unsigned int flags __attribute__ ((unused)))
@@ -289,28 +316,6 @@ telnet_client_find(int fd)
       break;
   }
   return c;
-}
-
-void telnet_client_printf(int c, const char* fmt, ...)
-{
-  va_list arg_ptr;
-  ssize_t remaining = sizeof(clients[c].out.buf) - clients[c].out.len;
-  ssize_t ret;
-
-  va_start(arg_ptr, fmt);
-  ret = vsnprintf(&(clients[c].out.buf[clients[c].out.len]), remaining, fmt, arg_ptr);
-  va_end(arg_ptr);
-
-  if(ret <= 0)
-    return;
-
-  if(!clients[c].out.len)
-    enable_olsr_socket(clients[c].fd, &telnet_client_action, NULL, SP_PR_WRITE);
-
-  if(ret < remaining)
-    clients[c].out.len += ret - 1;
-  else
-    clients[c].out.len += remaining - 1;
 }
 
 static void
