@@ -91,9 +91,8 @@ static void quit(int c, int argc __attribute__ ((unused)), char* argv[] __attrib
 
 static void help(int c, int argc, char* argv[])
 {
-  int i;
-  for(i=0; i<argc; ++i) {
-    telnet_client_printf(c, "%2i: %s\n\r", i, argv[i]);
+  size_t i;
+  for(i = 0; i < sizeof(dispatch_table)/sizeof(struct dispatch_table_element); ++i) {
+    telnet_client_printf(c, "  %s\t%s\n\r", dispatch_table[i].command, dispatch_table[i].helptext);
   }
 }
-
