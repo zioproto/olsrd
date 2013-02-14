@@ -273,12 +273,12 @@ telnet_action(int fd, void *data __attribute__ ((unused)), unsigned int flags __
   c = telnet_client_add(client_fd);
   if(c < MAX_CLIENTS) {
 #ifndef NODEBUG
-      olsr_printf(0, "(TELNET) Connect from %s (client: %d)\n", addr, c);
+      olsr_printf(2, "(TELNET) Connect from %s (client: %d)\n", addr, c);
 #endif /* NODEBUG */
   } else {
     close(client_fd);
 #ifndef NODEBUG
-    olsr_printf(0, "(TELNET) Connect from %s (maximum number of clients reached!)\n", addr);
+    olsr_printf(1, "(TELNET) Connect from %s (maximum number of clients reached!)\n", addr);
 #endif /* NODEBUG */    
   }
 }
@@ -391,7 +391,7 @@ telnet_client_read(int c)
   else {
     if(result == 0) {
 #ifndef NODEBUG
-      olsr_printf(0, "(TELNET) client %i: disconnected\n", c);
+      olsr_printf(2, "(TELNET) client %i: disconnected\n", c);
 #endif /* NODEBUG */
       telnet_client_remove(c);
     } else {
@@ -399,7 +399,7 @@ telnet_client_read(int c)
         return;
 
 #ifndef NODEBUG
-      olsr_printf(0, "(TELNET) client %i recv(): %s\n", c, strerror(errno));
+      olsr_printf(1, "(TELNET) client %i recv(): %s\n", c, strerror(errno));
 #endif /* NODEBUG */    
       telnet_client_remove(c);
     }
@@ -416,9 +416,6 @@ telnet_client_write(int c)
       clients[c].out.len -= result;
     } else {
       clients[c].out.len = 0;
-#ifndef NODEBUG
-      olsr_printf(0, "(TELNET) client %i: all data written\n", c);
-#endif /* NODEBUG */    
       disable_olsr_socket(clients[c].fd, &telnet_client_action, NULL, SP_PR_WRITE);
     }
   }
@@ -427,7 +424,7 @@ telnet_client_write(int c)
       return;
 
 #ifndef NODEBUG
-    olsr_printf(0, "(TELNET) client %i write(): %s\n", c, strerror(errno));
+    olsr_printf(1, "(TELNET) client %i write(): %s\n", c, strerror(errno));
 #endif /* NODEBUG */    
     telnet_client_remove(c);
   }
