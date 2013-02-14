@@ -51,9 +51,14 @@
 
 #include <string.h>
 
+#include "olsr_types.h"
+#include "ipcalc.h"
+
 #include "olsrd_telnet.h"
 #include "cmd_handler.h"
 
+
+static void hna(int, int, char**);
 static void quit(int, int, char**);
 static void help(int, int, char**);
 
@@ -65,6 +70,7 @@ struct dispatch_table_element {
 };
 
 struct dispatch_table_element dispatch_table[] = {
+{ "hna", hna, "update HNA table" },
 { "quit", quit, "terminates connection" },
 { "help", help, "prints this" }
 };
@@ -84,12 +90,44 @@ void cmd_dispatcher(int c, int argc, char* argv[])
   telnet_client_printf(c, "command '%s' unknown\n\r", argv[0]);
 }
 
+static void hna(int c, int argc, char* argv[])
+{
+  struct olsr_ip_prefix hna_entry;
+
+  if(argc != 3) {
+    telnet_client_printf(c, "usage: hna (add|del) <address>/<netmask>\n\r");
+    return;
+  }
+
+  if(olsr_string_to_prefix(olsr_cnf->ip_version, &hna_entry, argv[2])) {
+    telnet_client_printf(c, "address invalid\n\r");
+    return;
+  }
+
+  if(!strcmp(argv[1], "add")) {
+    if(ip_prefix_list_find(olsr_cnf->hna_entries, &(hna_entry.prefix), hna_entry.prefix_len))
+      telnet_client_printf(c, "FAILED: %s already in HNA table\n\r", olsr_ip_prefix_to_string(&hna_entry));
+    else {
+      ip_prefix_list_add(&olsr_cnf->hna_entries, &(hna_entry.prefix), hna_entry.prefix_len);
+      telnet_client_printf(c, "added %s to HNA table\n\r", olsr_ip_prefix_to_string(&hna_entry));
+    }
+  }
+  else if(!strcmp(argv[1], "del")) {
+    if(ip_prefix_list_remove(&olsr_cnf->hna_entries, &(hna_entry.prefix), hna_entry.prefix_len))
+      telnet_client_printf(c, "removed %s from HNA table\n\r", olsr_ip_prefix_to_string(&hna_entry));
+    else
+      telnet_client_printf(c, "FAILED: %s not found in HNA table\n\r", olsr_ip_prefix_to_string(&hna_entry));
+  }
+  else
+    telnet_client_printf(c, "usage: hna (add|del) <address>/<netmask>\n\r");
+}
+
 static void quit(int c, int argc __attribute__ ((unused)), char* argv[] __attribute__ ((unused)))
 {
   telnet_client_quit(c);
 }
 
-static void help(int c, int argc, char* argv[])
+static void help(int c, int argc __attribute__ ((unused)), char* argv[] __attribute__ ((unused)))
 {
   size_t i;
   for(i = 0; i < sizeof(dispatch_table)/sizeof(struct dispatch_table_element); ++i) {
