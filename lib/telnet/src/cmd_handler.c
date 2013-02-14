@@ -59,24 +59,48 @@
 #include "olsrd_telnet.h"
 #include "cmd_handler.h"
 
-
-static void hna(int, int, char**);
-static void terminate(int, int, char**);
-static void quit(int, int, char**);
-static void help(int, int, char**);
-
-
-struct dispatch_table_element {
+typedef struct {
   const char* command;
   void (*callback)(int, int, char**);
-  const char* helptext;
+  const char* short_help;
+  const char* usage_text;
+} cmd_t;
+
+
+void hna(int, int, char**);
+cmd_t hna_cmd = {
+   "hna", hna,
+   "udate HNA table",
+   "usage: hna (add|del) <address>/<netmask>"
 };
 
-struct dispatch_table_element dispatch_table[] = {
-{ "hna", hna, "update HNA table" },
-{ "quit", quit, "terminates telnet connection" },
-{ "terminate", terminate, "terminate olsrd" },
-{ "help", help, "prints this" }
+void quit(int, int, char**);
+cmd_t quit_cmd = {
+   "quit", quit,
+   "terminates telnet connection",
+   "quit"
+};
+
+void terminate(int, int, char**);
+cmd_t terminate_cmd = {
+   "terminate", terminate,
+   "terminate olsrd",
+   "terminate <reason>"
+};
+
+void help(int, int, char**);
+cmd_t help_cmd = {
+   "help", help,
+   "prints this",
+   "help [ <command> ]"
+};
+
+
+cmd_t* dispatch_table[] = {
+  &hna_cmd,
+  &quit_cmd,
+  &terminate_cmd,
+  &help_cmd
 };
 
 void cmd_dispatcher(int c, int argc, char* argv[])
@@ -86,20 +110,20 @@ void cmd_dispatcher(int c, int argc, char* argv[])
   if(argc < 1)
     return;
 
-  for(i = 0; i < sizeof(dispatch_table)/sizeof(struct dispatch_table_element); ++i) {
-    if(!strcmp(dispatch_table[i].command, argv[0]))
-      return dispatch_table[i].callback(c, argc, argv);
+  for(i = 0; i < sizeof(dispatch_table)/sizeof(cmd_t*); ++i) {
+    if(!strcmp(dispatch_table[i]->command, argv[0]))
+      return dispatch_table[i]->callback(c, argc, argv);
   }
 
   telnet_client_printf(c, "command '%s' unknown\n\r", argv[0]);
 }
 
-static void hna(int c, int argc, char* argv[])
+void hna(int c, int argc, char* argv[])
 {
   struct olsr_ip_prefix hna_entry;
 
   if(argc != 3) {
-    telnet_client_printf(c, "usage: hna (add|del) <address>/<netmask>\n\r");
+    telnet_client_printf(c, "%s\n\r", hna_cmd.usage_text);
     return;
   }
 
@@ -123,26 +147,26 @@ static void hna(int c, int argc, char* argv[])
       telnet_client_printf(c, "FAILED: %s not found in HNA table\n\r", olsr_ip_prefix_to_string(&hna_entry));
   }
   else
-    telnet_client_printf(c, "usage: hna (add|del) <address>/<netmask>\n\r");
+    telnet_client_printf(c, "%s\n\r", hna_cmd.usage_text);
 }
 
-static void quit(int c, int argc __attribute__ ((unused)), char* argv[] __attribute__ ((unused)))
+void quit(int c, int argc __attribute__ ((unused)), char* argv[] __attribute__ ((unused)))
 {
   telnet_client_quit(c);
 }
 
-static void help(int c, int argc __attribute__ ((unused)), char* argv[] __attribute__ ((unused)))
+void help(int c, int argc __attribute__ ((unused)), char* argv[] __attribute__ ((unused)))
 {
   size_t i;
-  for(i = 0; i < sizeof(dispatch_table)/sizeof(struct dispatch_table_element); ++i) {
-    telnet_client_printf(c, "  %s\t%s\n\r", dispatch_table[i].command, dispatch_table[i].helptext);
+  for(i = 0; i < sizeof(dispatch_table)/sizeof(cmd_t*); ++i) {
+    telnet_client_printf(c, "  %s\t%s\n\r", dispatch_table[i]->command, dispatch_table[i]->short_help);
   }
 }
 
-static void terminate(int c, int argc, char* argv[])
+void terminate(int c, int argc, char* argv[])
 {
   if(argc != 2) {
-    telnet_client_printf(c, "usage: terminate <reason>\n\r");
+    telnet_client_printf(c, "%s\n\r", terminate_cmd.usage_text);
     return;
   }
 
