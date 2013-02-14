@@ -100,6 +100,7 @@ static void telnet_client_write(int);
 
 #define MAX_CLIENTS 3
 #define BUF_SIZE 1024
+#define MAX_ARGS 16
 
 typedef struct {
   char buf[BUF_SIZE];
@@ -315,12 +316,20 @@ void telnet_client_printf(int c, const char* fmt, ...)
 static void
 telnet_client_handle_cmd(int c, char* cmd)
 {
+  int i;
+  char* argv[MAX_ARGS];
+
   if(!strlen(cmd))
     return;
 
-  
+  argv[0] = strtok(cmd, " \t");
+  for(i=1; i<MAX_ARGS;++i) {
+    argv[i] = strtok(NULL, " \t");
+    if(argv[i] == NULL)
+      break;
+  }
 
-  cmd_dispatcher(c, 1, &cmd);
+  cmd_dispatcher(c, i, argv);
 }
 
 static void

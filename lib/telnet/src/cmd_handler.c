@@ -1,3 +1,4 @@
+
 /*
  * The olsr.org Optimized Link-State Routing daemon(olsrd)
  * Copyright (c) 2004, Andreas Tonnesen(andreto@olsr.org)
@@ -55,8 +56,12 @@
 
 void cmd_dispatcher(int c, int argc, char* argv[])
 {
+  int i;
+
   if(argc < 1)
     return;
 
-  telnet_client_printf(c, "%s\n\r", argv[0]);
+  for(i=0; i<argc; ++i) {
+    telnet_client_printf(c, "%2i: %s\n\r", i, argv[i]);
+  }
 }
