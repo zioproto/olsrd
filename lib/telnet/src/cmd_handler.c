@@ -71,31 +71,32 @@ void hna(int, int, char**);
 cmd_t hna_cmd = {
    "hna", hna,
    "udate HNA table",
-   "usage: hna (add|del) <address>/<netmask>"
+   "  hna (add|del) <address>/<netmask>\n\r"
+   "  hna list"
 };
 
 void quit(int, int, char**);
 cmd_t quit_cmd = {
    "quit", quit,
    "terminates telnet connection",
-   "quit"
+   "  quit"
 };
 
 void terminate(int, int, char**);
 cmd_t terminate_cmd = {
    "terminate", terminate,
    "terminate olsrd",
-   "terminate <reason>"
+   "  terminate <reason>"
 };
 
 void help(int, int, char**);
 cmd_t help_cmd = {
    "help", help,
    "prints this",
-   "help [ <command> ]"
+   "  help [ <command> ]"
 };
 
-
+const char* USAGE_FMT = "usage:\n\r%s\n\r";
 cmd_t* dispatch_table[] = {
   &hna_cmd,
   &quit_cmd,
@@ -123,7 +124,7 @@ void hna(int c, int argc, char* argv[])
   struct olsr_ip_prefix hna_entry;
 
   if(argc != 3) {
-    telnet_client_printf(c, "%s\n\r", hna_cmd.usage_text);
+    telnet_client_printf(c, USAGE_FMT, hna_cmd.usage_text);
     return;
   }
 
@@ -147,26 +148,45 @@ void hna(int c, int argc, char* argv[])
       telnet_client_printf(c, "FAILED: %s not found in HNA table\n\r", olsr_ip_prefix_to_string(&hna_entry));
   }
   else
-    telnet_client_printf(c, "%s\n\r", hna_cmd.usage_text);
+    telnet_client_printf(c, USAGE_FMT, hna_cmd.usage_text);
 }
 
 void quit(int c, int argc __attribute__ ((unused)), char* argv[] __attribute__ ((unused)))
 {
+  if(argc != 1) {
+    telnet_client_printf(c, USAGE_FMT, quit_cmd.usage_text);
+    return;
+  }
+
   telnet_client_quit(c);
 }
 
 void help(int c, int argc __attribute__ ((unused)), char* argv[] __attribute__ ((unused)))
 {
   size_t i;
-  for(i = 0; i < sizeof(dispatch_table)/sizeof(cmd_t*); ++i) {
-    telnet_client_printf(c, "  %s\t%s\n\r", dispatch_table[i]->command, dispatch_table[i]->short_help);
+
+  switch(argc) {
+  case 1: 
+    for(i = 0; i < sizeof(dispatch_table)/sizeof(cmd_t*); ++i) {
+      telnet_client_printf(c, "  %s\t%s\n\r", dispatch_table[i]->command, dispatch_table[i]->short_help);
+    }
+    return;
+  case 2:
+    for(i = 0; i < sizeof(dispatch_table)/sizeof(cmd_t*); ++i) {
+      if(!strcmp(dispatch_table[i]->command, argv[1]))
+        return telnet_client_printf(c, USAGE_FMT, dispatch_table[i]->usage_text);
+    }
+    return telnet_client_printf(c, "command '%s' unknown\n\r", argv[1]);
+  default: 
+    return telnet_client_printf(c, USAGE_FMT, help_cmd.usage_text);
   }
+
 }
 
 void terminate(int c, int argc, char* argv[])
 {
   if(argc != 2) {
-    telnet_client_printf(c, "%s\n\r", terminate_cmd.usage_text);
+    telnet_client_printf(c, USAGE_FMT, terminate_cmd.usage_text);
     return;
   }
 
