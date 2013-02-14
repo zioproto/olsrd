@@ -54,14 +54,49 @@
 #include "olsrd_telnet.h"
 #include "cmd_handler.h"
 
+static void quit(int, int, char**);
+static void help(int, int, char**);
+
+
+struct dispatch_table_element {
+  const char* command;
+  void (*callback)(int, int, char**);
+  const char* helptext;
+};
+
+struct dispatch_table_element dispatch_table[] = {
+{ "quit", quit, "terminates connection" },
+{ "help", help, "prints this" }
+};
+
 void cmd_dispatcher(int c, int argc, char* argv[])
 {
-  int i;
+  size_t i;
 
   if(argc < 1)
     return;
 
+  for(i = 0; i < sizeof(dispatch_table)/sizeof(struct dispatch_table_element); ++i) {
+    if(!strcmp(dispatch_table[i].command, argv[0]))
+      return dispatch_table[i].callback(c, argc, argv);
+  }
+
+  telnet_client_printf(c, "command '%s' unknown\n\r", argv[0]);
+}
+
+static void quit(int c, int argc, char* argv[])
+{
+  int i;
   for(i=0; i<argc; ++i) {
     telnet_client_printf(c, "%2i: %s\n\r", i, argv[i]);
   }
 }
+
+static void help(int c, int argc, char* argv[])
+{
+  int i;
+  for(i=0; i<argc; ++i) {
+    telnet_client_printf(c, "%2i: %s\n\r", i, argv[i]);
+  }
+}
+
