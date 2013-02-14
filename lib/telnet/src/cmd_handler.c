@@ -8,6 +8,7 @@
  *                     includes code by Lorenz Schori
  *                     includes bugs by Markus Kittenberger
  *                     includes bugs by Hans-Christoph Steiner
+ *                     includes bugs by Christian Pointner
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
