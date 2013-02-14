@@ -70,30 +70,30 @@ typedef struct {
 void hna(int, int, char**);
 cmd_t hna_cmd = {
    "hna", hna,
-   "udate HNA table",
-   "  hna (add|del) <address>/<netmask>\n\r"
-   "  hna list"
+   "alter or show HNA table",
+   " hna (add|del) <address>/<netmask>\n\r"
+   " hna list"
 };
 
 void quit(int, int, char**);
 cmd_t quit_cmd = {
    "quit", quit,
    "terminates telnet connection",
-   "  quit"
+   " quit"
 };
 
 void terminate(int, int, char**);
 cmd_t terminate_cmd = {
    "terminate", terminate,
    "terminate olsrd",
-   "  terminate <reason>"
+   " terminate <reason>"
 };
 
 void help(int, int, char**);
 cmd_t help_cmd = {
    "help", help,
    "prints this",
-   "  help [ <command> ]"
+   " help [<command>]"
 };
 
 const char* USAGE_FMT = "usage:\n\r%s\n\r";
@@ -118,6 +118,7 @@ void cmd_dispatcher(int c, int argc, char* argv[])
 
   telnet_client_printf(c, "command '%s' unknown\n\r", argv[0]);
 }
+
 
 void hna(int c, int argc, char* argv[])
 {
@@ -158,6 +159,7 @@ void hna(int c, int argc, char* argv[])
     telnet_client_printf(c, USAGE_FMT, hna_cmd.usage_text);
 }
 
+
 void quit(int c, int argc __attribute__ ((unused)), char* argv[] __attribute__ ((unused)))
 {
   if(argc != 1) {
@@ -168,6 +170,7 @@ void quit(int c, int argc __attribute__ ((unused)), char* argv[] __attribute__ (
   telnet_client_quit(c);
 }
 
+
 void help(int c, int argc __attribute__ ((unused)), char* argv[] __attribute__ ((unused)))
 {
   size_t i;
@@ -175,13 +178,16 @@ void help(int c, int argc __attribute__ ((unused)), char* argv[] __attribute__ (
   switch(argc) {
   case 1: 
     for(i = 0; i < sizeof(dispatch_table)/sizeof(cmd_t*); ++i) {
-      telnet_client_printf(c, "  %s\t%s\n\r", dispatch_table[i]->command, dispatch_table[i]->short_help);
+      telnet_client_printf(c, " %-20s%s\n\r", dispatch_table[i]->command, dispatch_table[i]->short_help);
     }
     return;
   case 2:
     for(i = 0; i < sizeof(dispatch_table)/sizeof(cmd_t*); ++i) {
-      if(!strcmp(dispatch_table[i]->command, argv[1]))
-        return telnet_client_printf(c, USAGE_FMT, dispatch_table[i]->usage_text);
+      if(!strcmp(dispatch_table[i]->command, argv[1])) {
+        telnet_client_printf(c, "%s: %s\n\r\n\r", dispatch_table[i]->command, dispatch_table[i]->short_help);
+        telnet_client_printf(c, USAGE_FMT, dispatch_table[i]->usage_text);
+        return;
+      }
     }
     return telnet_client_printf(c, "command '%s' unknown\n\r", argv[1]);
   default: 
@@ -189,6 +195,7 @@ void help(int c, int argc __attribute__ ((unused)), char* argv[] __attribute__ (
   }
 
 }
+
 
 void terminate(int c, int argc, char* argv[])
 {
