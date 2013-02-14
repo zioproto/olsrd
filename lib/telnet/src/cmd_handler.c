@@ -123,6 +123,13 @@ void hna(int c, int argc, char* argv[])
 {
   struct olsr_ip_prefix hna_entry;
 
+  if(argc == 2 && !strcmp(argv[1], "list")) {
+    struct ip_prefix_list *h;
+    for (h = olsr_cnf->hna_entries; h != NULL; h = h->next)
+      telnet_client_printf(c, " %s\n\r", olsr_ip_prefix_to_string(&(h->net)));
+    return;
+  }
+
   if(argc != 3) {
     telnet_client_printf(c, USAGE_FMT, hna_cmd.usage_text);
     return;
