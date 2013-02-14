@@ -51,6 +51,7 @@
 
 #include <string.h>
 
+#include "olsr.h"
 #include "olsr_types.h"
 #include "ipcalc.h"
 
@@ -59,6 +60,7 @@
 
 
 static void hna(int, int, char**);
+static void terminate(int, int, char**);
 static void quit(int, int, char**);
 static void help(int, int, char**);
 
@@ -71,7 +73,8 @@ struct dispatch_table_element {
 
 struct dispatch_table_element dispatch_table[] = {
 { "hna", hna, "update HNA table" },
-{ "quit", quit, "terminates connection" },
+{ "quit", quit, "terminates telnet connection" },
+{ "terminate", terminate, "terminate olsrd" },
 { "help", help, "prints this" }
 };
 
@@ -133,4 +136,14 @@ static void help(int c, int argc __attribute__ ((unused)), char* argv[] __attrib
   for(i = 0; i < sizeof(dispatch_table)/sizeof(struct dispatch_table_element); ++i) {
     telnet_client_printf(c, "  %s\t%s\n\r", dispatch_table[i].command, dispatch_table[i].helptext);
   }
+}
+
+static void terminate(int c, int argc, char* argv[])
+{
+  if(argc != 2) {
+    telnet_client_printf(c, "usage: terminate <reason>\n\r");
+    return;
+  }
+
+  olsr_exit(argv[1], EXIT_SUCCESS);
 }
