@@ -55,12 +55,8 @@
 
 void cmd_dispatcher(int c, int argc, char* argv[])
 {
-  char tmp[1000];
-
   if(argc < 1)
     return;
 
-  strcpy(tmp, argv[0]);
-  strcat(tmp, "\r\n");
-  telnet_client_add_output(c, tmp);
+  telnet_client_printf(c, "%s\n\r", argv[0]);
 }

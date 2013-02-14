@@ -290,18 +290,26 @@ telnet_client_find(int fd)
   return c;
 }
 
-void telnet_client_add_output(int c, char* string)
+void telnet_client_printf(int c, const char* fmt, ...)
 {
-  size_t remaining = sizeof(clients[c].out.buf) - clients[c].out.len;
-  size_t len = strlen(string);
-  size_t len_add = remaining >= len ? len : remaining;
+  va_list arg_ptr;
+  ssize_t remaining = sizeof(clients[c].out.buf) - clients[c].out.len;
+  ssize_t ret;
 
-  memcpy((void*)&clients[c].out.buf[clients[c].out.len], string, len_add);
+  va_start(arg_ptr, fmt);
+  ret = vsnprintf(&(clients[c].out.buf[clients[c].out.len]), remaining, fmt, arg_ptr);
+  va_end(arg_ptr);
+
+  if(ret <= 0)
+    return;
 
   if(!clients[c].out.len)
     enable_olsr_socket(clients[c].fd, &telnet_client_action, NULL, SP_PR_WRITE);
 
-  clients[c].out.len += len_add;
+  if(ret < remaining)
+    clients[c].out.len += ret - 1;
+  else
+    clients[c].out.len += remaining - 1;
 }
 
 static void
@@ -310,9 +318,7 @@ telnet_client_handle_cmd(int c, char* cmd)
   if(!strlen(cmd))
     return;
 
-#ifndef NODEBUG
-  olsr_printf(0, "(TELNET) client %i: received '%s'\n", c, cmd);
-#endif /* NODEBUG */
+  
 
   cmd_dispatcher(c, 1, &cmd);
 }
