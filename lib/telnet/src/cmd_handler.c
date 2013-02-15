@@ -173,9 +173,8 @@ void hna(int c, int argc, char* argv[])
 
 void interface(int c, int argc, char* argv[])
 {
-  const struct olsr_if *ifs;
-
   if(argc == 2 && !strcmp(argv[1], "list")) {
+    const struct olsr_if *ifs;
     for (ifs = olsr_cnf->interfaces; ifs != NULL; ifs = ifs->next)
       telnet_client_printf(c, " %-10s (%s)\n\r", ifs->name, (!(ifs->interf)) ? "DOWN" : "UP" );
 
@@ -188,14 +187,22 @@ void interface(int c, int argc, char* argv[])
   }
 
   if(!strcmp(argv[1], "add")) {
-/* struct olsr_if *olsr_create_olsrif(const char *name, int hemu); */
+    const struct olsr_if *ifs = olsr_create_olsrif(argv[2], false);
+    if(!ifs || !chk_if_up(ifs, 3)) {
+      telnet_client_printf(c, "FAILED: add interface '%s', see log output for further information\n\r", argv[2]);
+      return;
+    }
   }
   else if(!strcmp(argv[1], "del")) {
-/* void olsr_remove_interface(struct olsr_if *); */
+    struct olsr_if *ifs = olsrif_ifwithname(argv[2]);
+    if(!ifs) {
+      telnet_client_printf(c, "FAILED: no such interface '%s'\n\r", argv[2]);
+      return;
+    }
+    olsr_remove_interface(ifs);
   }
   else if(!strcmp(argv[1], "status")) {
-
-    ifs = olsrif_ifwithname(argv[2]);
+    const struct olsr_if *ifs = olsrif_ifwithname(argv[2]);
     if(ifs) {
       const struct interface *const rifs = ifs->interf;
       telnet_client_printf(c, "Interface '%s':\n\r", ifs->name);
