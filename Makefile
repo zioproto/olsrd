@@ -186,7 +186,7 @@ rpm:
 
 # This is quite ugly but at least it works
 ifeq ($(OS),linux)
-SUBDIRS := arprefresh bmf dot_draw dyn_gw dyn_gw_plain httpinfo jsoninfo mdns mini nameservice p2pd pgraph pud quagga secure sgwdynspeed txtinfo watchdog
+SUBDIRS := arprefresh bmf dnssd dot_draw dyn_gw dyn_gw_plain httpinfo jsoninfo mdns mini nameservice p2pd pgraph pud quagga secure sgwdynspeed txtinfo watchdog
 else
 ifeq ($(OS),win32)
 SUBDIRS := dot_draw httpinfo jsoninfo mini pgraph secure txtinfo
@@ -249,6 +249,18 @@ bmf_install:
 
 bmf_uninstall:
 		$(MAKECMDPREFIX)$(MAKECMD) -C lib/bmf DESTDIR=$(DESTDIR) uninstall
+
+dnssd:
+		$(MAKECMDPREFIX)$(MAKECMD) -C lib/dnssd
+
+dnssd_clean:
+		$(MAKECMDPREFIX)$(MAKECMD) -C lib/dnssd DESTDIR=$(DESTDIR) clean
+
+dnssd_install:
+		$(MAKECMDPREFIX)$(MAKECMD) -C lib/dnssd DESTDIR=$(DESTDIR) install
+
+dnssd_uninstall:
+		$(MAKECMDPREFIX)$(MAKECMD) -C lib/dnssd DESTDIR=$(DESTDIR) uninstall
 
 dot_draw:
 		$(MAKECMDPREFIX)$(MAKECMD) -C lib/dot_draw
