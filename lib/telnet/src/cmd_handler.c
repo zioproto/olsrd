@@ -188,10 +188,12 @@ void interface(int c, int argc, char* argv[])
 
   if(!strcmp(argv[1], "add")) {
     const struct olsr_if *ifs = olsr_create_olsrif(argv[2], false);
-    if(!ifs || !chk_if_up(ifs, 3)) {
+    if(!ifs) {
       telnet_client_printf(c, "FAILED: add interface '%s', see log output for further information\n\r", argv[2]);
       return;
     }
+    if(ifs->cnf)
+      ifs->cnf->autodetect_chg = true;
   }
   else if(!strcmp(argv[1], "del")) {
     struct olsr_if *ifs = olsrif_ifwithname(argv[2]);
