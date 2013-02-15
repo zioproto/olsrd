@@ -75,6 +75,15 @@ cmd_t hna_cmd = {
    " hna list"
 };
 
+void interface(int, int, char**);
+cmd_t interface_cmd = {
+   "interface", interface,
+   "add/remove or list interfaces",
+   " interface (add|del) <name>\n\r"
+   " interface status <name>\n\r"
+   " interface list"
+};
+
 void quit(int, int, char**);
 cmd_t quit_cmd = {
    "quit", quit,
@@ -85,20 +94,21 @@ cmd_t quit_cmd = {
 void terminate(int, int, char**);
 cmd_t terminate_cmd = {
    "terminate", terminate,
-   "terminate olsrd",
+   "terminate olsr daemon",
    " terminate <reason>"
 };
 
 void help(int, int, char**);
 cmd_t help_cmd = {
    "help", help,
-   "prints this",
+   "prints usage strings",
    " help [<command>]"
 };
 
 const char* USAGE_FMT = "usage:\n\r%s\n\r";
 cmd_t* dispatch_table[] = {
   &hna_cmd,
+  &interface_cmd,
   &quit_cmd,
   &terminate_cmd,
   &help_cmd
@@ -116,7 +126,7 @@ void cmd_dispatcher(int c, int argc, char* argv[])
       return dispatch_table[i]->callback(c, argc, argv);
   }
 
-  telnet_client_printf(c, "command '%s' unknown\n\r", argv[0]);
+  telnet_client_printf(c, "command '%s' unknown - enter help for a list of commands\n\r", argv[0]);
 }
 
 
@@ -160,6 +170,62 @@ void hna(int c, int argc, char* argv[])
 }
 
 
+
+void interface(int c, int argc, char* argv[])
+{
+  const struct olsr_if *ifs;
+
+  if(argc == 2 && !strcmp(argv[1], "list")) {
+    for (ifs = olsr_cnf->interfaces; ifs != NULL; ifs = ifs->next)
+      telnet_client_printf(c, " %-10s (%s)\n\r", ifs->name, (!(ifs->interf)) ? "DOWN" : "UP" );
+
+    return;
+  }
+
+  if(argc != 3) {
+    telnet_client_printf(c, USAGE_FMT, interface_cmd.usage_text);
+    return;
+  }
+
+  if(!strcmp(argv[1], "add")) {
+/* struct olsr_if *olsr_create_olsrif(const char *name, int hemu); */
+  }
+  else if(!strcmp(argv[1], "del")) {
+/* void olsr_remove_interface(struct olsr_if *); */
+  }
+  else if(!strcmp(argv[1], "status")) {
+
+    ifs = olsrif_ifwithname(argv[2]);
+    if(ifs) {
+      const struct interface *const rifs = ifs->interf;
+      telnet_client_printf(c, "Interface '%s':\n\r", ifs->name);
+      telnet_client_printf(c, " Status: %s\n\r", (!rifs) ? "DOWN" : "UP" );
+      if (!rifs)
+        return;
+
+      if (olsr_cnf->ip_version == AF_INET) {
+        struct ipaddr_str addrbuf, maskbuf, bcastbuf;
+        telnet_client_printf(c, " IP: %s\n\r", ip4_to_string(&addrbuf, rifs->int_addr.sin_addr));
+        telnet_client_printf(c, " MASK: %s\n\r", ip4_to_string(&maskbuf, rifs->int_netmask.sin_addr));
+        telnet_client_printf(c, " BCAST: %s\n\r", ip4_to_string(&bcastbuf, rifs->int_broadaddr.sin_addr));
+      } else {
+        struct ipaddr_str addrbuf, maskbuf;
+        telnet_client_printf(c, " IP: %s\n\r", ip6_to_string(&addrbuf, &rifs->int6_addr.sin6_addr));
+        telnet_client_printf(c, " MCAST: %s\n\r", ip6_to_string(&maskbuf, &rifs->int6_multaddr.sin6_addr));
+      }
+      telnet_client_printf(c, " MTU: %d\n\r", rifs->int_mtu);
+      telnet_client_printf(c, " WLAN: %s\n\r", rifs->is_wireless ? "Yes" : "No");
+      return;
+    }
+    telnet_client_printf(c, "FAILED: no such interface '%s'\n\r", argv[2]);
+    return;
+  }
+  else
+    telnet_client_printf(c, USAGE_FMT, interface_cmd.usage_text);
+}
+
+
+
 void quit(int c, int argc __attribute__ ((unused)), char* argv[] __attribute__ ((unused)))
 {
   if(argc != 1) {
@@ -176,9 +242,9 @@ void help(int c, int argc __attribute__ ((unused)), char* argv[] __attribute__ (
   size_t i;
 
   switch(argc) {
-  case 1: 
+  case 1:
     for(i = 0; i < sizeof(dispatch_table)/sizeof(cmd_t*); ++i) {
-      telnet_client_printf(c, " %-20s%s\n\r", dispatch_table[i]->command, dispatch_table[i]->short_help);
+      telnet_client_printf(c, " %-16s %s\n\r", dispatch_table[i]->command, dispatch_table[i]->short_help);
     }
     return;
   case 2:
@@ -190,7 +256,7 @@ void help(int c, int argc __attribute__ ((unused)), char* argv[] __attribute__ (
       }
     }
     return telnet_client_printf(c, "command '%s' unknown\n\r", argv[1]);
-  default: 
+  default:
     return telnet_client_printf(c, USAGE_FMT, help_cmd.usage_text);
   }
 
