@@ -63,10 +63,10 @@
 #include "cmd_handler.h"
 #include "cmd_interface.h"
 
-
-static int cmd_interface(int, int, char**);
+static telnet_cmd_function cmd_interface(int, int, char**);
+struct telnet_cmd_functor cmd_interface_functor = { &cmd_interface };
 cmd_t cmd_interface_struct = {
-   "interface", cmd_interface,
+   "interface", &cmd_interface_functor,
    "add/remove or list interfaces",
    " interface (add|del) <name>\n\r"
    " interface status <name>\n\r"
@@ -80,12 +80,12 @@ int cmd_interface_init(void)
 }
 
 
-static int cmd_interface_add(int c, const char* name)
+static telnet_cmd_function cmd_interface_add(int c, const char* name)
 {
   const struct olsr_if *ifs = olsr_create_olsrif(name, false);
   if(!ifs) {
     telnet_client_printf(c, "FAILED: to add interface '%s', see log output for further information\n\r", name);
-    return -1;
+    return NULL;
   }
 /*
   interface config deep copy
@@ -109,19 +109,19 @@ static int cmd_interface_add(int c, const char* name)
   }
 /* end of interface config deep copy */
   telnet_client_printf(c, "interface %s added\n\r", name);
-  return 0;
+  return NULL;
 }
 
-static int cmd_interface_del(int c, const char* name)
+static telnet_cmd_function cmd_interface_del(int c, const char* name)
 {
   struct olsr_if *ifs = olsrif_ifwithname(name);
   if(!ifs) {
     telnet_client_printf(c, "FAILED: no such interface '%s'\n\r", name);
-    return -1;
+    return NULL;
   }
   if((ifnet->int_next == NULL) && (!olsr_cnf->allow_no_interfaces)) {
     telnet_client_printf(c, "FAILED: '%s' is the sole interface and olsrd is configured not to run without interfaces\n\r", name);
-    return -1;
+    return NULL;
   }
   if(ifs->interf)
     olsr_remove_interface(ifs);
@@ -142,10 +142,10 @@ static int cmd_interface_del(int c, const char* name)
   }
 /* also removing interface from global configuration */
   telnet_client_printf(c, "interface %s removed\n\r", name);
-  return 0;
+  return NULL;
 }
 
-static int cmd_interface_status(int c, const char* name)
+static telnet_cmd_function cmd_interface_status(int c, const char* name)
 {
   const struct olsr_if *ifs = olsrif_ifwithname(name);
   if(ifs) {
@@ -153,7 +153,7 @@ static int cmd_interface_status(int c, const char* name)
     telnet_client_printf(c, "Interface '%s':\n\r", ifs->name);
     telnet_client_printf(c, " Status: %s\n\r", (!rifs) ? "Down" : "Up" );
     if (!rifs)
-      return 0;
+      return NULL;
 
     if (olsr_cnf->ip_version == AF_INET) {
       struct ipaddr_str addrbuf, maskbuf, bcastbuf;
@@ -167,25 +167,25 @@ static int cmd_interface_status(int c, const char* name)
     }
     telnet_client_printf(c, " MTU: %d\n\r", rifs->int_mtu);
     telnet_client_printf(c, " WLAN: %s\n\r", rifs->is_wireless ? "Yes" : "No");
-    return 0;
+    return NULL;
   }
   telnet_client_printf(c, "FAILED: no such interface '%s'\n\r", name);
-  return -1;
+  return NULL;
 }
 
-static int cmd_interface(int c, int argc, char* argv[])
+static telnet_cmd_function cmd_interface(int c, int argc, char* argv[])
 {
   if(argc == 2 && !strcmp(argv[1], "list")) {
     const struct olsr_if *ifs;
     for (ifs = olsr_cnf->interfaces; ifs != NULL; ifs = ifs->next)
       telnet_client_printf(c, " %-10s (%s)\n\r", ifs->name, (!(ifs->interf)) ? "Down" : "Up" );
 
-    return 0;
+    return NULL;
   }
 
   if(argc != 3) {
     telnet_print_usage(c, &cmd_interface_struct);
-    return -1;
+    return NULL;
   }
 
   if(!strcmp(argv[1], "add")) {
@@ -199,5 +199,5 @@ static int cmd_interface(int c, int argc, char* argv[])
   }
 
   telnet_print_usage(c, &cmd_interface_struct);
-  return -1;
+  return NULL;
 }

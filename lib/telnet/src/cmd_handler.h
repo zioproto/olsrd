@@ -48,7 +48,10 @@
 #ifndef _OLSRD_TELNET_CMD_HANDLER
 #define _OLSRD_TELNET_CMD_HANDLER
 
-typedef int (*telnet_cmd_function) (int, int, char**);
+typedef struct telnet_cmd_functor* telnet_cmd_function;
+struct telnet_cmd_functor {
+  telnet_cmd_function (*f)(int, int, char**);
+};
 
 typedef struct telnet_cmd_struct {
   const char* command;
@@ -58,9 +61,9 @@ typedef struct telnet_cmd_struct {
   struct telnet_cmd_struct* next;
 } cmd_t;
 
-void telnet_print_usage(int, cmd_t*);
 int telnet_cmd_add(cmd_t*);
 cmd_t* telnet_cmd_remove(const char*);
+void telnet_print_usage(int, cmd_t*);
 
 int telnet_cmd_dispatch(int, int, char**);
 

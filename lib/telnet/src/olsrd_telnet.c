@@ -113,6 +113,7 @@ typedef struct {
   int fd;
   struct autobuf out;
   struct autobuf in;
+  telnet_cmd_function continue_function;
 } client_t;
 
 static client_t clients[MAX_CLIENTS];
@@ -237,6 +238,7 @@ plugin_telnet_init(void)
     for(i=0; i<MAX_CLIENTS; ++i) {
       int ret;
       clients[i].fd = -1;
+      clients[i].continue_function = NULL;
       ret = abuf_init(&(clients[i].out), BUF_SIZE);
       if(ret) {
 #ifndef NODEBUG
@@ -261,13 +263,21 @@ plugin_telnet_init(void)
 
 void telnet_client_quit(int c)
 {
+  if(c < 0 || c >= MAX_CLIENTS)
+    return;
+
   telnet_client_remove(c);
 }
 
 void telnet_client_printf(int c, const char* fmt, ...)
 {
-  int ret, old_len = clients[c].out.len;
+  int ret, old_len;
   va_list arg_ptr;
+
+  if(c < 0 || c >= MAX_CLIENTS)
+    return;
+
+  old_len = clients[c].out.len;
   va_start(arg_ptr, fmt);
   ret = abuf_vappendf(&(clients[c].out), fmt, arg_ptr);
   va_end(arg_ptr);
@@ -277,6 +287,14 @@ void telnet_client_printf(int c, const char* fmt, ...)
 
   if(!old_len)
     enable_olsr_socket(clients[c].fd, &telnet_client_action, NULL, SP_PR_WRITE);
+}
+
+void telnet_client_set_continue_function(int c, telnet_cmd_function f)
+{
+  if(c < 0 || c >= MAX_CLIENTS)
+    return;
+
+  clients[c].continue_function = f;
 }
 
 
@@ -331,6 +349,7 @@ telnet_client_add(int fd)
   for(c=0; c < MAX_CLIENTS; c++) {
     if(clients[c].fd == -1) {
       clients[c].fd = fd;
+      clients[c].continue_function = NULL;
       abuf_pull(&(clients[c].out), clients[c].out.len);
       abuf_pull(&(clients[c].in), clients[c].in.len);
       add_olsr_socket(fd, &telnet_client_action, NULL, NULL, SP_PR_READ);
@@ -347,6 +366,7 @@ telnet_client_remove(int c)
   remove_olsr_socket(clients[c].fd, &telnet_client_action, NULL);
   close(clients[c].fd);
   clients[c].fd = -1;
+  clients[c].continue_function = NULL;
   abuf_pull(&(clients[c].out), clients[c].out.len);
   abuf_pull(&(clients[c].in), clients[c].in.len);
 }

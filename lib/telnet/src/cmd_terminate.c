@@ -60,9 +60,11 @@
 #include "cmd_handler.h"
 #include "cmd_terminate.h"
 
-static int cmd_terminate(int, int, char**);
+
+static telnet_cmd_function cmd_terminate(int, int, char**);
+struct telnet_cmd_functor cmd_terminate_functor = { &cmd_terminate };
 cmd_t cmd_terminate_struct = {
-  "terminate", cmd_terminate,
+  "terminate", &cmd_terminate_functor,
   "terminate olsr daemon",
   " terminate <reason>",
   NULL
@@ -74,13 +76,13 @@ int cmd_terminate_init(void)
 }
 
 
-static int cmd_terminate(int c, int argc, char* argv[])
+static telnet_cmd_function cmd_terminate(int c, int argc, char* argv[])
 {
   if(argc != 2) {
     telnet_print_usage(c, &cmd_terminate_struct);
-    return -1;
+    return NULL;
   }
 
   olsr_exit(argv[1], EXIT_SUCCESS);
-  return 0;
+  return NULL;
 }

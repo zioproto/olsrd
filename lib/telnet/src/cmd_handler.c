@@ -60,17 +60,19 @@
 #include "cmd_handler.h"
 
 
-static int cmd_help(int, int, char**);
+static telnet_cmd_function cmd_help(int, int, char**);
+struct telnet_cmd_functor cmd_help_functor = { &cmd_help };
 cmd_t cmd_help_struct = {
-  "help", cmd_help,
+  "help", &cmd_help_functor,
   "prints usage strings",
   " help [<command>]",
   NULL
 };
 
-static int cmd_quit(int, int, char**);
+static telnet_cmd_function cmd_quit(int, int, char**);
+struct telnet_cmd_functor cmd_quit_functor = { &cmd_quit };
 cmd_t cmd_quit_struct = {
-  "quit", cmd_quit,
+  "quit", &cmd_quit_functor,
   "terminates telnet connection",
   " quit",
   &cmd_help_struct
@@ -145,8 +147,10 @@ int telnet_cmd_dispatch(int c, int argc, char* argv[])
     return -1;
 
   tmp_cmd = telnet_cmd_find(argv[0]);
-  if(tmp_cmd)
-    return tmp_cmd->cmd_function(c, argc, argv);
+  if(tmp_cmd) {
+    telnet_client_set_continue_function(c, tmp_cmd->cmd_function->f(c, argc, argv));
+    return 0;
+  }
 
   telnet_client_printf(c, "command '%s' unknown - enter help for a list of commands\n\r", argv[0]);
   return -1;
@@ -154,18 +158,18 @@ int telnet_cmd_dispatch(int c, int argc, char* argv[])
 
 
 
-static int cmd_quit(int c, int argc, char* argv[] __attribute__ ((unused)))
+static telnet_cmd_function cmd_quit(int c, int argc, char* argv[] __attribute__ ((unused)))
 {
   if(argc != 1) {
     telnet_print_usage(c, &cmd_quit_struct);
-    return -1;
+    return NULL;
   }
 
   telnet_client_quit(c);
-  return 0;
+  return NULL;
 }
 
-static int cmd_help(int c, int argc, char* argv[])
+static telnet_cmd_function cmd_help(int c, int argc, char* argv[])
 {
   cmd_t* tmp_cmd;
 
@@ -173,7 +177,7 @@ static int cmd_help(int c, int argc, char* argv[])
   case 1:
     for(tmp_cmd = dispatch_table; tmp_cmd; tmp_cmd = tmp_cmd->next)
       telnet_client_printf(c, " %-16s %s\n\r", tmp_cmd->command, tmp_cmd->short_help);
-    return 0;
+    return NULL;
   case 2:
     tmp_cmd = telnet_cmd_find(argv[1]);
     if(tmp_cmd) {
@@ -181,9 +185,9 @@ static int cmd_help(int c, int argc, char* argv[])
       telnet_print_usage(c, tmp_cmd);
     } else
       telnet_client_printf(c, "command '%s' unknown\n\r", argv[1]);
-    return 0;
+    return NULL;
   default:
     telnet_print_usage(c, &cmd_help_struct);
-    return -1;
+    return NULL;
   }
 }
