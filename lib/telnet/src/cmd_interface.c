@@ -61,6 +61,91 @@
 #include "cmd_handler.h"
 #include "cmd_interface.h"
 
+static void cmd_interface_add(int c, const char* name)
+{
+  const struct olsr_if *ifs = olsr_create_olsrif(name, false);
+  if(!ifs) {
+    telnet_client_printf(c, "FAILED: to add interface '%s', see log output for further information\n\r", name);
+    return;
+  }
+/*
+  interface config deep copy
+    This is a short version of what the function
+      olsrd_sanity_check_cnf() @ src/cfgparser/olsrd_conf.c
+    does. Given the knowledge that cnfi and cnf are always different and that there are no
+    inteface specific lq_mults.
+    would be nice if the core would provide a function to do this...
+*/
+  memcpy((uint8_t*)ifs->cnf, (uint8_t*)olsr_cnf->interface_defaults, sizeof(*ifs->cnf));
+  memset((uint8_t*)ifs->cnfi, 0, sizeof(*ifs->cnfi));
+  {
+    struct olsr_lq_mult *mult, *mult_temp;
+    ifs->cnf->lq_mult=NULL;
+    for (mult = olsr_cnf->interface_defaults->lq_mult; mult; mult=mult->next) {
+      mult_temp=olsr_malloc(sizeof(struct olsr_lq_mult), "telnet inteface add mult_temp");
+      memcpy(mult_temp,mult,sizeof(struct olsr_lq_mult));
+      mult_temp->next=ifs->cnf->lq_mult;
+      ifs->cnf->lq_mult=mult_temp;
+    }
+  }
+/* end of interface config deep copy */
+}
+
+static void cmd_interface_del(int c, const char* name)
+{
+  struct olsr_if *ifs = olsrif_ifwithname(name);
+  if(!ifs) {
+    telnet_client_printf(c, "FAILED: no such interface '%s'\n\r", name);
+    return;
+  }
+  olsr_remove_interface(ifs);
+/* 
+   actual removing interface from global interface list
+     why removes olsr_remove_interface() from ifnet but not form
+     olsr_cnf->intefaces???
+*/
+  if(olsr_cnf->interfaces == ifs) {
+    olsr_cnf->interfaces = ifs->next;
+    free(ifs);
+  } else {
+    struct olsr_if *if_tmp;
+    for (if_tmp = olsr_cnf->interfaces; if_tmp; if_tmp=if_tmp->next) {
+      if(if_tmp->next == ifs) {
+        if_tmp->next = ifs->next;
+        free(ifs);
+        break;
+      }
+    }
+  }
+/* end of actual removing interface from global interface list */    
+}
+
+static void cmd_interface_status(int c, const char* name)
+{
+  const struct olsr_if *ifs = olsrif_ifwithname(name);
+  if(ifs) {
+    const struct interface *const rifs = ifs->interf;
+    telnet_client_printf(c, "Interface '%s':\n\r", ifs->name);
+    telnet_client_printf(c, " Status: %s\n\r", (!rifs) ? "DOWN" : "UP" );
+    if (!rifs)
+      return;
+    
+    if (olsr_cnf->ip_version == AF_INET) {
+      struct ipaddr_str addrbuf, maskbuf, bcastbuf;
+      telnet_client_printf(c, " IP: %s\n\r", ip4_to_string(&addrbuf, rifs->int_addr.sin_addr));
+      telnet_client_printf(c, " MASK: %s\n\r", ip4_to_string(&maskbuf, rifs->int_netmask.sin_addr));
+      telnet_client_printf(c, " BCAST: %s\n\r", ip4_to_string(&bcastbuf, rifs->int_broadaddr.sin_addr));
+    } else {
+      struct ipaddr_str addrbuf, maskbuf;
+      telnet_client_printf(c, " IP: %s\n\r", ip6_to_string(&addrbuf, &rifs->int6_addr.sin6_addr));
+      telnet_client_printf(c, " MCAST: %s\n\r", ip6_to_string(&maskbuf, &rifs->int6_multaddr.sin6_addr));
+    }
+    telnet_client_printf(c, " MTU: %d\n\r", rifs->int_mtu);
+    telnet_client_printf(c, " WLAN: %s\n\r", rifs->is_wireless ? "Yes" : "No");
+    return;
+  }
+  telnet_client_printf(c, "FAILED: no such interface '%s'\n\r", name);
+}
 
 static void cmd_interface(int c, int argc, char* argv[])
 {
@@ -78,85 +163,13 @@ static void cmd_interface(int c, int argc, char* argv[])
   }
 
   if(!strcmp(argv[1], "add")) {
-    const struct olsr_if *ifs = olsr_create_olsrif(argv[2], false);
-    if(!ifs) {
-      telnet_client_printf(c, "FAILED: to add interface '%s', see log output for further information\n\r", argv[2]);
-      return;
-    }
-/*
-  interface config deep copy
-    This is a short version of what the function
-      olsrd_sanity_check_cnf() @ src/cfgparser/olsrd_conf.c
-    does. Given the knowledge that cnfi and cnf are always different and that there are no
-    inteface specific lq_mults.
-    would be nice if the core would provide a function to do this...
-*/
-    memcpy((uint8_t*)ifs->cnf, (uint8_t*)olsr_cnf->interface_defaults, sizeof(*ifs->cnf));
-    memset((uint8_t*)ifs->cnfi, 0, sizeof(*ifs->cnfi));
-    {
-      struct olsr_lq_mult *mult, *mult_temp;
-      ifs->cnf->lq_mult=NULL;
-      for (mult = olsr_cnf->interface_defaults->lq_mult; mult; mult=mult->next) {
-        mult_temp=olsr_malloc(sizeof(struct olsr_lq_mult), "telnet inteface add mult_temp");
-        memcpy(mult_temp,mult,sizeof(struct olsr_lq_mult));
-        mult_temp->next=ifs->cnf->lq_mult;
-        ifs->cnf->lq_mult=mult_temp;
-      }
-    }
-/* end of interface config deep copy */
+    cmd_interface_add(c, argv[2]);
   }
   else if(!strcmp(argv[1], "del")) {
-    struct olsr_if *ifs = olsrif_ifwithname(argv[2]);
-    if(!ifs) {
-      telnet_client_printf(c, "FAILED: no such interface '%s'\n\r", argv[2]);
-      return;
-    }
-    olsr_remove_interface(ifs);
-/* 
-   actual removing interface from global interface list
-     why removes olsr_remove_interface() from ifnet but not form
-     olsr_cnf->intefaces???
-*/
-    if(olsr_cnf->interfaces == ifs) {
-      olsr_cnf->interfaces = ifs->next;
-      free(ifs);
-    } else {
-      struct olsr_if *if_tmp;
-      for (if_tmp = olsr_cnf->interfaces; if_tmp; if_tmp=if_tmp->next) {
-        if(if_tmp->next == ifs) {
-          if_tmp->next = ifs->next;
-          free(ifs);
-          break;
-        }
-      }
-    }
-/* end of actual removing interface from global interface list */    
+    cmd_interface_del(c, argv[2]);
   }
   else if(!strcmp(argv[1], "status")) {
-    const struct olsr_if *ifs = olsrif_ifwithname(argv[2]);
-    if(ifs) {
-      const struct interface *const rifs = ifs->interf;
-      telnet_client_printf(c, "Interface '%s':\n\r", ifs->name);
-      telnet_client_printf(c, " Status: %s\n\r", (!rifs) ? "DOWN" : "UP" );
-      if (!rifs)
-        return;
-
-      if (olsr_cnf->ip_version == AF_INET) {
-        struct ipaddr_str addrbuf, maskbuf, bcastbuf;
-        telnet_client_printf(c, " IP: %s\n\r", ip4_to_string(&addrbuf, rifs->int_addr.sin_addr));
-        telnet_client_printf(c, " MASK: %s\n\r", ip4_to_string(&maskbuf, rifs->int_netmask.sin_addr));
-        telnet_client_printf(c, " BCAST: %s\n\r", ip4_to_string(&bcastbuf, rifs->int_broadaddr.sin_addr));
-      } else {
-        struct ipaddr_str addrbuf, maskbuf;
-        telnet_client_printf(c, " IP: %s\n\r", ip6_to_string(&addrbuf, &rifs->int6_addr.sin6_addr));
-        telnet_client_printf(c, " MCAST: %s\n\r", ip6_to_string(&maskbuf, &rifs->int6_multaddr.sin6_addr));
-      }
-      telnet_client_printf(c, " MTU: %d\n\r", rifs->int_mtu);
-      telnet_client_printf(c, " WLAN: %s\n\r", rifs->is_wireless ? "Yes" : "No");
-      return;
-    }
-    telnet_client_printf(c, "FAILED: no such interface '%s'\n\r", argv[2]);
-    return;
+    cmd_interface_status(c, argv[2]);
   }
   else
     print_usage(c, &interface_cmd);
