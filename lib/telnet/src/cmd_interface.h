@@ -48,6 +48,6 @@
 #ifndef _OLSRD_TELNET_CMD_INTERFACE
 #define _OLSRD_TELNET_CMD_INTERFACE
 
-extern cmd_t interface_cmd;
+int cmd_interface_init(void);
 
 #endif /* _OLSRD_TELNET_CMD_INTERFACE */

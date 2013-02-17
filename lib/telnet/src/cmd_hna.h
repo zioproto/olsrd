@@ -48,6 +48,6 @@
 #ifndef _OLSRD_TELNET_CMD_HNA
 #define _OLSRD_TELNET_CMD_HNA
 
-extern cmd_t hna_cmd;
+int cmd_hna_init(void);
 
 #endif /* _OLSRD_TELNET_CMD_HNA */

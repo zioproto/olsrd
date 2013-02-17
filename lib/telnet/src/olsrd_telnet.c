@@ -79,7 +79,10 @@
 
 #include "olsrd_telnet.h"
 #include "olsrd_plugin.h"
+
 #include "cmd_handler.h"
+#include "cmd_hna.h"
+#include "cmd_interface.h"
 
 #ifdef _WIN32
 #define close(x) closesocket(x)
@@ -229,6 +232,19 @@ plugin_telnet_init(void)
       }
     }
   }
+
+  if(cmd_hna_init()) {
+#ifndef NODEBUG
+    olsr_printf(1, "(TELNET) failed: enabling hna command\n");
+#endif /* NODEBUG */
+  }
+
+  if(cmd_interface_init()) {
+#ifndef NODEBUG
+    olsr_printf(1, "(TELNET) failed: enabling interface command\n");
+#endif /* NODEBUG */
+  }
+
   return 1;
 }
 
@@ -351,7 +367,7 @@ telnet_client_handle_cmd(int c, char* cmd)
       break;
   }
 
-  telnet_cmd_dispatcher(c, i, argv);
+  telnet_cmd_dispatch(c, i, argv);
   telnet_client_prompt(c);
 }
 

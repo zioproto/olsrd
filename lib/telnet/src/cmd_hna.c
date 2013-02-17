@@ -60,25 +60,45 @@
 #include "cmd_handler.h"
 #include "cmd_hna.h"
 
-static void cmd_hna_add(int c, struct olsr_ip_prefix* hna_entry)
+static int cmd_hna(int, int, char**);
+cmd_t cmd_hna_struct = {
+   "hna", cmd_hna,
+   "alter or show HNA table",
+   " hna (add|del) <address>/<netmask>\n\r"
+   " hna list",
+   NULL
+};
+
+int cmd_hna_init(void)
 {
-  if(ip_prefix_list_find(olsr_cnf->hna_entries, &(hna_entry->prefix), hna_entry->prefix_len))
+  return telnet_cmd_add(&cmd_hna_struct);
+}
+
+
+static int cmd_hna_add(int c, struct olsr_ip_prefix* hna_entry)
+{
+  if(ip_prefix_list_find(olsr_cnf->hna_entries, &(hna_entry->prefix), hna_entry->prefix_len)) {
     telnet_client_printf(c, "FAILED: %s already in HNA table\n\r", olsr_ip_prefix_to_string(hna_entry));
-  else {
-    ip_prefix_list_add(&olsr_cnf->hna_entries, &(hna_entry->prefix), hna_entry->prefix_len);
-    telnet_client_printf(c, "added %s to HNA table\n\r", olsr_ip_prefix_to_string(hna_entry));
+    return -1;
   }
+
+  ip_prefix_list_add(&olsr_cnf->hna_entries, &(hna_entry->prefix), hna_entry->prefix_len);
+  telnet_client_printf(c, "added %s to HNA table\n\r", olsr_ip_prefix_to_string(hna_entry));
+  return 0;
 }
 
-static void cmd_hna_del(int c, struct olsr_ip_prefix* hna_entry)
+static int cmd_hna_del(int c, struct olsr_ip_prefix* hna_entry)
 {
-  if(ip_prefix_list_remove(&olsr_cnf->hna_entries, &(hna_entry->prefix), hna_entry->prefix_len))
+  if(ip_prefix_list_remove(&olsr_cnf->hna_entries, &(hna_entry->prefix), hna_entry->prefix_len)) {
     telnet_client_printf(c, "removed %s from HNA table\n\r", olsr_ip_prefix_to_string(hna_entry));
-  else
-    telnet_client_printf(c, "FAILED: %s not found in HNA table\n\r", olsr_ip_prefix_to_string(hna_entry));
+    return -1;
+  }
+
+  telnet_client_printf(c, "FAILED: %s not found in HNA table\n\r", olsr_ip_prefix_to_string(hna_entry));
+  return 0;
 }
 
-static void cmd_hna(int c, int argc, char* argv[])
+static int cmd_hna(int c, int argc, char* argv[])
 {
   struct olsr_ip_prefix hna_entry;
 
@@ -86,33 +106,26 @@ static void cmd_hna(int c, int argc, char* argv[])
     struct ip_prefix_list *h;
     for (h = olsr_cnf->hna_entries; h != NULL; h = h->next)
       telnet_client_printf(c, " %s\n\r", olsr_ip_prefix_to_string(&(h->net)));
-    return;
+    return 0;
   }
 
   if(argc != 3) {
-    telnet_print_usage(c, &hna_cmd);
-    return;
+    telnet_print_usage(c, &cmd_hna_struct);
+    return -1;
   }
 
   if(olsr_string_to_prefix(olsr_cnf->ip_version, &hna_entry, argv[2])) {
     telnet_client_printf(c, "address invalid\n\r");
-    return;
+    return -1;
   }
 
   if(!strcmp(argv[1], "add")) {
-    cmd_hna_add(c, &hna_entry);
+    return cmd_hna_add(c, &hna_entry);
   }
   else if(!strcmp(argv[1], "del")) {
-    cmd_hna_del(c, &hna_entry);
+    return cmd_hna_del(c, &hna_entry);
   }
-  else
-    telnet_print_usage(c, &hna_cmd);
+
+  telnet_print_usage(c, &cmd_hna_struct);
+  return -1;
 }
-
-
-cmd_t hna_cmd = {
-   "hna", cmd_hna,
-   "alter or show HNA table",
-   " hna (add|del) <address>/<netmask>\n\r"
-   " hna list"
-};

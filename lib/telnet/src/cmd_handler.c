@@ -59,99 +59,150 @@
 #include "olsrd_telnet.h"
 #include "cmd_handler.h"
 
-#include "cmd_hna.h"
-#include "cmd_interface.h"
 
-static void cmd_quit(int, int, char**);
-cmd_t quit_cmd = {
-   "quit", cmd_quit,
-   "terminates telnet connection",
-   " quit"
+static int cmd_help(int, int, char**);
+cmd_t cmd_help_struct = {
+  "help", cmd_help,
+  "prints usage strings",
+  " help [<command>]",
+  NULL
 };
 
-static void cmd_terminate(int, int, char**);
-cmd_t terminate_cmd = {
-   "terminate", cmd_terminate,
-   "terminate olsr daemon",
-   " terminate <reason>"
+static int cmd_terminate(int, int, char**);
+cmd_t cmd_terminate_struct = {
+  "terminate", cmd_terminate,
+  "terminate olsr daemon",
+  " terminate <reason>",
+  &cmd_help_struct
 };
 
-static void cmd_help(int, int, char**);
-cmd_t help_cmd = {
-   "help", cmd_help,
-   "prints usage strings",
-   " help [<command>]"
+static int cmd_quit(int, int, char**);
+cmd_t cmd_quit_struct = {
+  "quit", cmd_quit,
+  "terminates telnet connection",
+  " quit",
+  &cmd_terminate_struct
 };
 
-cmd_t* dispatch_table[] = {
-  &hna_cmd,
-  &interface_cmd,
-  &quit_cmd,
-  &terminate_cmd,
-  &help_cmd
-};
+cmd_t* dispatch_table = &cmd_quit_struct;
+
+static inline cmd_t* telnet_cmd_find(const char* command)
+{
+  cmd_t* tmp_cmd;
+
+  if(!command)
+    return NULL;
+
+  for(tmp_cmd = dispatch_table; tmp_cmd; tmp_cmd = tmp_cmd->next)
+    if(!strcmp(tmp_cmd->command, command))
+      return tmp_cmd;
+
+  return NULL;
+}
+
+int telnet_cmd_add(cmd_t* cmd)
+{
+  cmd_t* tmp_cmd;
+
+  if(!cmd || !cmd->command || !cmd->cmd_function || !cmd->short_help || !cmd->usage_text)
+    return 0;
+
+  tmp_cmd = telnet_cmd_find(cmd->command);
+  if(tmp_cmd)
+    return 0;
+
+  cmd->next = dispatch_table;
+  dispatch_table = cmd;
+
+  return 1;
+}
+
+cmd_t* telnet_cmd_remove(const char* command)
+{
+  cmd_t* tmp_cmd;
+
+  if(!command || !dispatch_table)
+    return NULL;
+
+  if(!strcmp(dispatch_table->command, command)) {
+    cmd_t* removee = dispatch_table;
+    dispatch_table = dispatch_table->next;
+    return removee;
+  }
+  for(tmp_cmd = dispatch_table; tmp_cmd->next; tmp_cmd = tmp_cmd->next) {
+    if(!strcmp(tmp_cmd->next->command, command)) {
+      cmd_t* removee = tmp_cmd->next;
+      tmp_cmd->next = tmp_cmd->next->next;
+      return removee;
+    }
+  }
+
+  return NULL;
+}
 
 inline void telnet_print_usage(int c, cmd_t* cmd)
 {
   telnet_client_printf(c, "usage:\n\r%s\n\r", cmd->usage_text);
 }
 
-void telnet_cmd_dispatcher(int c, int argc, char* argv[])
+int telnet_cmd_dispatch(int c, int argc, char* argv[])
 {
-  size_t i;
+  cmd_t* tmp_cmd;
 
   if(argc < 1)
-    return;
+    return -1;
 
-  for(i = 0; i < sizeof(dispatch_table)/sizeof(cmd_t*); ++i) {
-    if(!strcmp(dispatch_table[i]->command, argv[0]))
-      return dispatch_table[i]->cmd_function(c, argc, argv);
-  }
+  tmp_cmd = telnet_cmd_find(argv[0]);
+  if(tmp_cmd)
+    return tmp_cmd->cmd_function(c, argc, argv);
 
   telnet_client_printf(c, "command '%s' unknown - enter help for a list of commands\n\r", argv[0]);
+  return -1;
 }
 
-static void cmd_quit(int c, int argc __attribute__ ((unused)), char* argv[] __attribute__ ((unused)))
+
+
+static int cmd_quit(int c, int argc, char* argv[] __attribute__ ((unused)))
 {
   if(argc != 1) {
-    telnet_print_usage(c, &quit_cmd);
-    return;
+    telnet_print_usage(c, &cmd_quit_struct);
+    return -1;
   }
 
   telnet_client_quit(c);
+  return 0;
 }
 
-static void cmd_terminate(int c, int argc, char* argv[])
+static int cmd_terminate(int c, int argc, char* argv[])
 {
   if(argc != 2) {
-    telnet_print_usage(c, &terminate_cmd);
-    return;
+    telnet_print_usage(c, &cmd_terminate_struct);
+    return -1;
   }
 
   olsr_exit(argv[1], EXIT_SUCCESS);
+  return 0;
 }
 
-static void cmd_help(int c, int argc __attribute__ ((unused)), char* argv[] __attribute__ ((unused)))
+static int cmd_help(int c, int argc, char* argv[])
 {
-  size_t i;
+  cmd_t* tmp_cmd;
 
   switch(argc) {
   case 1:
-    for(i = 0; i < sizeof(dispatch_table)/sizeof(cmd_t*); ++i) {
-      telnet_client_printf(c, " %-16s %s\n\r", dispatch_table[i]->command, dispatch_table[i]->short_help);
-    }
-    return;
+    for(tmp_cmd = dispatch_table; tmp_cmd; tmp_cmd = tmp_cmd->next)
+      telnet_client_printf(c, " %-16s %s\n\r", tmp_cmd->command, tmp_cmd->short_help);
+    return 0;
   case 2:
-    for(i = 0; i < sizeof(dispatch_table)/sizeof(cmd_t*); ++i) {
-      if(!strcmp(dispatch_table[i]->command, argv[1])) {
-        telnet_client_printf(c, "%s: %s\n\r\n\r", dispatch_table[i]->command, dispatch_table[i]->short_help);
-        telnet_print_usage(c, dispatch_table[i]);
-        return;
-      }
-    }
-    return telnet_client_printf(c, "command '%s' unknown\n\r", argv[1]);
+    tmp_cmd = telnet_cmd_find(argv[1]);
+    if(tmp_cmd) {
+      telnet_client_printf(c, "%s: %s\n\r\n\r", tmp_cmd->command, tmp_cmd->short_help);
+      telnet_print_usage(c, tmp_cmd);
+    } else
+      telnet_client_printf(c, "command '%s' unknown\n\r", argv[1]);
+    return 0;
   default:
-    telnet_print_usage(c, &help_cmd); return;
+    telnet_print_usage(c, &cmd_help_struct);
+    return -1;
   }
-
 }
