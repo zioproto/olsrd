@@ -164,7 +164,7 @@ static void cmd_interface(int c, int argc, char* argv[])
   }
 
   if(argc != 3) {
-    print_usage(c, &interface_cmd);
+    telnet_print_usage(c, &interface_cmd);
     return;
   }
 
@@ -178,7 +178,7 @@ static void cmd_interface(int c, int argc, char* argv[])
     cmd_interface_status(c, argv[2]);
   }
   else
-    print_usage(c, &interface_cmd);
+    telnet_print_usage(c, &interface_cmd);
 }
 
 cmd_t interface_cmd = {

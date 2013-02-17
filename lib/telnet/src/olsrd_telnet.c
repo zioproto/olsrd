@@ -351,7 +351,7 @@ telnet_client_handle_cmd(int c, char* cmd)
       break;
   }
 
-  cmd_dispatcher(c, i, argv);
+  telnet_cmd_dispatcher(c, i, argv);
   telnet_client_prompt(c);
 }
 

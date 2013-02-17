@@ -90,7 +90,7 @@ static void cmd_hna(int c, int argc, char* argv[])
   }
 
   if(argc != 3) {
-    print_usage(c, &hna_cmd);
+    telnet_print_usage(c, &hna_cmd);
     return;
   }
 
@@ -106,7 +106,7 @@ static void cmd_hna(int c, int argc, char* argv[])
     cmd_hna_del(c, &hna_entry);
   }
   else
-    print_usage(c, &hna_cmd);
+    telnet_print_usage(c, &hna_cmd);
 }
 
 

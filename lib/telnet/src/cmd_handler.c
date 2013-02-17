@@ -62,21 +62,21 @@
 #include "cmd_hna.h"
 #include "cmd_interface.h"
 
-void cmd_quit(int, int, char**);
+static void cmd_quit(int, int, char**);
 cmd_t quit_cmd = {
    "quit", cmd_quit,
    "terminates telnet connection",
    " quit"
 };
 
-void cmd_terminate(int, int, char**);
+static void cmd_terminate(int, int, char**);
 cmd_t terminate_cmd = {
    "terminate", cmd_terminate,
    "terminate olsr daemon",
    " terminate <reason>"
 };
 
-void cmd_help(int, int, char**);
+static void cmd_help(int, int, char**);
 cmd_t help_cmd = {
    "help", cmd_help,
    "prints usage strings",
@@ -91,12 +91,12 @@ cmd_t* dispatch_table[] = {
   &help_cmd
 };
 
-inline void print_usage(int c, cmd_t* cmd)
+inline void telnet_print_usage(int c, cmd_t* cmd)
 {
   telnet_client_printf(c, "usage:\n\r%s\n\r", cmd->usage_text);
 }
 
-void cmd_dispatcher(int c, int argc, char* argv[])
+void telnet_cmd_dispatcher(int c, int argc, char* argv[])
 {
   size_t i;
 
@@ -105,33 +105,33 @@ void cmd_dispatcher(int c, int argc, char* argv[])
 
   for(i = 0; i < sizeof(dispatch_table)/sizeof(cmd_t*); ++i) {
     if(!strcmp(dispatch_table[i]->command, argv[0]))
-      return dispatch_table[i]->callback(c, argc, argv);
+      return dispatch_table[i]->cmd_function(c, argc, argv);
   }
 
   telnet_client_printf(c, "command '%s' unknown - enter help for a list of commands\n\r", argv[0]);
 }
 
-void cmd_quit(int c, int argc __attribute__ ((unused)), char* argv[] __attribute__ ((unused)))
+static void cmd_quit(int c, int argc __attribute__ ((unused)), char* argv[] __attribute__ ((unused)))
 {
   if(argc != 1) {
-    print_usage(c, &quit_cmd);
+    telnet_print_usage(c, &quit_cmd);
     return;
   }
 
   telnet_client_quit(c);
 }
 
-void cmd_terminate(int c, int argc, char* argv[])
+static void cmd_terminate(int c, int argc, char* argv[])
 {
   if(argc != 2) {
-    print_usage(c, &terminate_cmd);
+    telnet_print_usage(c, &terminate_cmd);
     return;
   }
 
   olsr_exit(argv[1], EXIT_SUCCESS);
 }
 
-void cmd_help(int c, int argc __attribute__ ((unused)), char* argv[] __attribute__ ((unused)))
+static void cmd_help(int c, int argc __attribute__ ((unused)), char* argv[] __attribute__ ((unused)))
 {
   size_t i;
 
@@ -145,13 +145,13 @@ void cmd_help(int c, int argc __attribute__ ((unused)), char* argv[] __attribute
     for(i = 0; i < sizeof(dispatch_table)/sizeof(cmd_t*); ++i) {
       if(!strcmp(dispatch_table[i]->command, argv[1])) {
         telnet_client_printf(c, "%s: %s\n\r\n\r", dispatch_table[i]->command, dispatch_table[i]->short_help);
-        print_usage(c, dispatch_table[i]);
+        telnet_print_usage(c, dispatch_table[i]);
         return;
       }
     }
     return telnet_client_printf(c, "command '%s' unknown\n\r", argv[1]);
   default:
-    print_usage(c, &help_cmd); return;
+    telnet_print_usage(c, &help_cmd); return;
   }
 
 }
