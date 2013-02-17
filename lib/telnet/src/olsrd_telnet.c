@@ -83,6 +83,7 @@
 #include "cmd_handler.h"
 #include "cmd_hna.h"
 #include "cmd_interface.h"
+#include "cmd_terminate.h"
 
 #ifdef _WIN32
 #define close(x) closesocket(x)
@@ -143,6 +144,12 @@ olsr_plugin_exit(void)
 
 static void enable_commands(void)
 {
+  if(cmd_terminate_init()) {
+#ifndef NODEBUG
+    olsr_printf(1, "(TELNET) failed: enabling terminate command\n");
+#endif /* NODEBUG */
+  }
+
   if(cmd_hna_init()) {
 #ifndef NODEBUG
     olsr_printf(1, "(TELNET) failed: enabling hna command\n");

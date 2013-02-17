@@ -68,20 +68,12 @@ cmd_t cmd_help_struct = {
   NULL
 };
 
-static int cmd_terminate(int, int, char**);
-cmd_t cmd_terminate_struct = {
-  "terminate", cmd_terminate,
-  "terminate olsr daemon",
-  " terminate <reason>",
-  &cmd_help_struct
-};
-
 static int cmd_quit(int, int, char**);
 cmd_t cmd_quit_struct = {
   "quit", cmd_quit,
   "terminates telnet connection",
   " quit",
-  &cmd_terminate_struct
+  &cmd_help_struct
 };
 
 cmd_t* dispatch_table = &cmd_quit_struct;
@@ -170,17 +162,6 @@ static int cmd_quit(int c, int argc, char* argv[] __attribute__ ((unused)))
   }
 
   telnet_client_quit(c);
-  return 0;
-}
-
-static int cmd_terminate(int c, int argc, char* argv[])
-{
-  if(argc != 2) {
-    telnet_print_usage(c, &cmd_terminate_struct);
-    return -1;
-  }
-
-  olsr_exit(argv[1], EXIT_SUCCESS);
   return 0;
 }
 

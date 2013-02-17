@@ -12,11 +12,11 @@ To use the plugin one just has to enable the plugin (see PLUGIN CONFIGURATION)
 and connect to it using telnet, nc or the like. There are several built-in
 functions:
   quit       - terminates the client connection
-  terminate  - terminates the olsr daemon
   help       - print usage strings and lists all available commands
 
 Besides that there are commands for altering and inspecting HNA and
-interface lists.
+interface lists and a command to terminate the whole olsr daemon. All these
+commands my be globally disabled (see PLUGIN CONFIGURATION).
 
 If you want to add additional commands you have to write something like
 this:
