@@ -223,7 +223,8 @@ void interface(int c, int argc, char* argv[])
     olsr_remove_interface(ifs);
 /* 
    actual removing interface from global interface list
-     why is this not done by olsr_remove_interface()??? 
+     why removes olsr_remove_interface() from ifnet but not form
+     olsr_cnf->intefaces???
 */
     if(olsr_cnf->interfaces == ifs) {
       olsr_cnf->interfaces = ifs->next;
