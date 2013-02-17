@@ -141,6 +141,21 @@ olsr_plugin_exit(void)
     close(telnet_socket);
 }
 
+static void enable_commands(void)
+{
+  if(cmd_hna_init()) {
+#ifndef NODEBUG
+    olsr_printf(1, "(TELNET) failed: enabling hna command\n");
+#endif /* NODEBUG */
+  }
+
+  if(cmd_interface_init()) {
+#ifndef NODEBUG
+    olsr_printf(1, "(TELNET) failed: enabling interface command\n");
+#endif /* NODEBUG */
+  }
+}
+
 static int
 plugin_telnet_init(void)
 {
@@ -233,18 +248,7 @@ plugin_telnet_init(void)
     }
   }
 
-  if(cmd_hna_init()) {
-#ifndef NODEBUG
-    olsr_printf(1, "(TELNET) failed: enabling hna command\n");
-#endif /* NODEBUG */
-  }
-
-  if(cmd_interface_init()) {
-#ifndef NODEBUG
-    olsr_printf(1, "(TELNET) failed: enabling interface command\n");
-#endif /* NODEBUG */
-  }
-
+  enable_commands();
   return 1;
 }
 
