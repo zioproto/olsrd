@@ -1,22 +1,72 @@
 
-The telnet plugin aims ...
+The telnet plugin aims to enable the user to update some of olsrd's
+configuration at runtime without the need to restart the whole daemon.
+For now adding and removing interfaces as well as adding and removing
+HNA entries is supported, but others may follow.
+Other plugins may also use this plugin to add additional commands.
 
 PLUGIN USAGE
 ============
 
-tba...
+To use the plugin one just has to enable the plugin (see PLUGIN CONFIGURATION)
+and connect to it using telnet, nc or the like. There are several built-in
+functions:
+  quit       - terminates the client connection
+  terminate  - terminates the olsr daemon
+  help       - print usage strings and lists all available commands
 
-hna add <address>/<mask>
+Besides that there is a command for altering and inspecting HNA and
+interface lists.
 
-hna del <address>/<mask>
+If you want to add additional commands you have to write something like
+this:
 
-tba...
+<snip>
+#include "lib/telnet/src/cmd_handler.h"
+
+static int cmd_mycmd(int, int, char**);
+cmd_t cmd_mycmd_struct = {
+   "mycmd", cmd_mycmd,
+   "short help text",
+   " usage text (line 1)\n\r"
+   " usage text (line 2)",
+   NULL
+};
+
+static int cmd_mycmd(int c, int argc, char* argv[])
+{
+  if(argc != 1) {
+    telnet_print_usage(c, &cmd_mycmd_struct);
+    return -1;
+  }
+
+  /* do something useful or at least funny ;) */
+  if(success)
+    return 0;
+
+  telnet_print_usage(c, &cmd_mycmd_struct);
+  return -1;
+}
+</snip>
+
+You can then enable/disable your command by calling:
+
+<snip>
+telnet_cmd_add(&cmd_mycmd_struct);
+...
+telnet_cmd_remove("mycmd");
+</snip>
+
+If you want to dynamically allocate your command struct you may do so,
+but you have to free the memory yourself after removal. The telnet_cmd_remove
+function returns a pointner to your original struct.
+
 
 PLUGIN CONFIGURATION
 ====================
 
 The plugin accepts two parameters: "port" and "bind". There are no
-futher parameters. 
+further parameters.
 
 LoadPlugin "olsrd_telnet.so.0.0"
 {
@@ -32,4 +82,6 @@ LoadPlugin "olsrd_telnet.so.0.0"
 Example Usage
 =============
 
-tba...
+The tools directory contains some scripts which use `expect` to add/remove
+HNA entries. This is particulary useful if you want to update the HNA list
+whithout the need to restart the whole daemon.
