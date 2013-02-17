@@ -189,32 +189,29 @@ void interface(int c, int argc, char* argv[])
   if(!strcmp(argv[1], "add")) {
     const struct olsr_if *ifs = olsr_create_olsrif(argv[2], false);
     if(!ifs) {
-      telnet_client_printf(c, "FAILED: add interface '%s', see log output for further information\n\r", argv[2]);
+      telnet_client_printf(c, "FAILED: to add interface '%s', see log output for further information\n\r", argv[2]);
       return;
     }
+/*
+  This is a short version of what the function
+    olsrd_sanity_check_cnf() @ src/cfgparser/olsrd_conf.c
+  does. Given the knowledge that cnfi and cnf are always different and that there are no
+  inteface specific lq_mults.
+  would be nice if the core would provide a function to do this...
+ */
+    memcpy((uint8_t*)ifs->cnf, (uint8_t*)olsr_cnf->interface_defaults, sizeof(*ifs->cnf));
+    memset((uint8_t*)ifs->cnfi, 0, sizeof(*ifs->cnfi));
     {
-      size_t pos;
       struct olsr_lq_mult *mult, *mult_temp;
-      uint8_t *cnfptr = (uint8_t*)ifs->cnf;
-      uint8_t *cnfiptr = (uint8_t*)ifs->cnfi;
-      uint8_t *defptr = (uint8_t*)olsr_cnf->interface_defaults;
-
-      for (pos = 0; pos < sizeof(*ifs->cnf); pos++) {
-        if (cnfptr[pos] != cnfiptr[pos]) {
-          cnfptr[pos] = defptr[pos]; cnfiptr[pos]=0x00;
-        }
-        else cnfiptr[pos]=0xFF;
-      }
-
-          /*copy default lqmults into this interface*/
       ifs->cnf->lq_mult=NULL;
       for (mult = olsr_cnf->interface_defaults->lq_mult; mult; mult=mult->next) {
-        mult_temp=malloc(sizeof(struct olsr_lq_mult));
+        mult_temp=olsr_malloc(sizeof(struct olsr_lq_mult), "telnet inteface add mult_temp");
         memcpy(mult_temp,mult,sizeof(struct olsr_lq_mult));
         mult_temp->next=ifs->cnf->lq_mult;
         ifs->cnf->lq_mult=mult_temp;
       }
     }
+/* end of interface config deep copy */
   }
   else if(!strcmp(argv[1], "del")) {
     struct olsr_if *ifs = olsrif_ifwithname(argv[2]);
