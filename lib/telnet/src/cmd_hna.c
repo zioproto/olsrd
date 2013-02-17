@@ -3,6 +3,11 @@
  * The olsr.org Optimized Link-State Routing daemon(olsrd)
  * Copyright (c) 2004, Andreas Tonnesen(andreto@olsr.org)
  *                     includes code by Bruno Randolf
+ *                     includes code by Andreas Lopatic
+ *                     includes code by Sven-Ola Tuecke
+ *                     includes code by Lorenz Schori
+ *                     includes bugs by Markus Kittenberger
+ *                     includes bugs by Hans-Christoph Steiner
  *                     includes bugs by Christian Pointner
  * All rights reserved.
  *
@@ -45,17 +50,60 @@
  * Dynamic linked library for the olsr.org olsr daemon
  */
 
-#ifndef _OLSRD_TELNET_CMD_HANDLER
-#define _OLSRD_TELNET_CMD_HANDLER
+#include <string.h>
 
-typedef struct {
-  const char* command;
-  void (*callback)(int, int, char**);
-  const char* short_help;
-  const char* usage_text;
-} cmd_t;
+#include "olsr.h"
+#include "olsr_types.h"
+#include "ipcalc.h"
 
-void print_usage(int, cmd_t*);
-void cmd_dispatcher(int, int, char**);
+#include "olsrd_telnet.h"
+#include "cmd_handler.h"
+#include "cmd_hna.h"
 
-#endif /* _OLSRD_TELNET_CMD_HANDLER */
+
+static void cmd_hna(int c, int argc, char* argv[])
+{
+  struct olsr_ip_prefix hna_entry;
+
+  if(argc == 2 && !strcmp(argv[1], "list")) {
+    struct ip_prefix_list *h;
+    for (h = olsr_cnf->hna_entries; h != NULL; h = h->next)
+      telnet_client_printf(c, " %s\n\r", olsr_ip_prefix_to_string(&(h->net)));
+    return;
+  }
+
+  if(argc != 3) {
+    print_usage(c, &hna_cmd);
+    return;
+  }
+
+  if(olsr_string_to_prefix(olsr_cnf->ip_version, &hna_entry, argv[2])) {
+    telnet_client_printf(c, "address invalid\n\r");
+    return;
+  }
+
+  if(!strcmp(argv[1], "add")) {
+    if(ip_prefix_list_find(olsr_cnf->hna_entries, &(hna_entry.prefix), hna_entry.prefix_len))
+      telnet_client_printf(c, "FAILED: %s already in HNA table\n\r", olsr_ip_prefix_to_string(&hna_entry));
+    else {
+      ip_prefix_list_add(&olsr_cnf->hna_entries, &(hna_entry.prefix), hna_entry.prefix_len);
+      telnet_client_printf(c, "added %s to HNA table\n\r", olsr_ip_prefix_to_string(&hna_entry));
+    }
+  }
+  else if(!strcmp(argv[1], "del")) {
+    if(ip_prefix_list_remove(&olsr_cnf->hna_entries, &(hna_entry.prefix), hna_entry.prefix_len))
+      telnet_client_printf(c, "removed %s from HNA table\n\r", olsr_ip_prefix_to_string(&hna_entry));
+    else
+      telnet_client_printf(c, "FAILED: %s not found in HNA table\n\r", olsr_ip_prefix_to_string(&hna_entry));
+  }
+  else
+    print_usage(c, &hna_cmd);
+}
+
+
+cmd_t hna_cmd = {
+   "hna", cmd_hna,
+   "alter or show HNA table",
+   " hna (add|del) <address>/<netmask>\n\r"
+   " hna list"
+};

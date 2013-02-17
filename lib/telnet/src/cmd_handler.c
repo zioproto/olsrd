@@ -59,53 +59,30 @@
 #include "olsrd_telnet.h"
 #include "cmd_handler.h"
 
-typedef struct {
-  const char* command;
-  void (*callback)(int, int, char**);
-  const char* short_help;
-  const char* usage_text;
-} cmd_t;
+#include "cmd_hna.h"
+#include "cmd_interface.h"
 
-
-void hna(int, int, char**);
-cmd_t hna_cmd = {
-   "hna", hna,
-   "alter or show HNA table",
-   " hna (add|del) <address>/<netmask>\n\r"
-   " hna list"
-};
-
-void interface(int, int, char**);
-cmd_t interface_cmd = {
-   "interface", interface,
-   "add/remove or list interfaces",
-   " interface (add|del) <name>\n\r"
-   " interface status <name>\n\r"
-   " interface list"
-};
-
-void quit(int, int, char**);
+void cmd_quit(int, int, char**);
 cmd_t quit_cmd = {
-   "quit", quit,
+   "quit", cmd_quit,
    "terminates telnet connection",
    " quit"
 };
 
-void terminate(int, int, char**);
+void cmd_terminate(int, int, char**);
 cmd_t terminate_cmd = {
-   "terminate", terminate,
+   "terminate", cmd_terminate,
    "terminate olsr daemon",
    " terminate <reason>"
 };
 
-void help(int, int, char**);
+void cmd_help(int, int, char**);
 cmd_t help_cmd = {
-   "help", help,
+   "help", cmd_help,
    "prints usage strings",
    " help [<command>]"
 };
 
-const char* USAGE_FMT = "usage:\n\r%s\n\r";
 cmd_t* dispatch_table[] = {
   &hna_cmd,
   &interface_cmd,
@@ -113,6 +90,11 @@ cmd_t* dispatch_table[] = {
   &terminate_cmd,
   &help_cmd
 };
+
+inline void print_usage(int c, cmd_t* cmd)
+{
+  telnet_client_printf(c, "usage:\n\r%s\n\r", cmd->usage_text);
+}
 
 void cmd_dispatcher(int c, int argc, char* argv[])
 {
@@ -129,162 +111,27 @@ void cmd_dispatcher(int c, int argc, char* argv[])
   telnet_client_printf(c, "command '%s' unknown - enter help for a list of commands\n\r", argv[0]);
 }
 
-
-void hna(int c, int argc, char* argv[])
-{
-  struct olsr_ip_prefix hna_entry;
-
-  if(argc == 2 && !strcmp(argv[1], "list")) {
-    struct ip_prefix_list *h;
-    for (h = olsr_cnf->hna_entries; h != NULL; h = h->next)
-      telnet_client_printf(c, " %s\n\r", olsr_ip_prefix_to_string(&(h->net)));
-    return;
-  }
-
-  if(argc != 3) {
-    telnet_client_printf(c, USAGE_FMT, hna_cmd.usage_text);
-    return;
-  }
-
-  if(olsr_string_to_prefix(olsr_cnf->ip_version, &hna_entry, argv[2])) {
-    telnet_client_printf(c, "address invalid\n\r");
-    return;
-  }
-
-  if(!strcmp(argv[1], "add")) {
-    if(ip_prefix_list_find(olsr_cnf->hna_entries, &(hna_entry.prefix), hna_entry.prefix_len))
-      telnet_client_printf(c, "FAILED: %s already in HNA table\n\r", olsr_ip_prefix_to_string(&hna_entry));
-    else {
-      ip_prefix_list_add(&olsr_cnf->hna_entries, &(hna_entry.prefix), hna_entry.prefix_len);
-      telnet_client_printf(c, "added %s to HNA table\n\r", olsr_ip_prefix_to_string(&hna_entry));
-    }
-  }
-  else if(!strcmp(argv[1], "del")) {
-    if(ip_prefix_list_remove(&olsr_cnf->hna_entries, &(hna_entry.prefix), hna_entry.prefix_len))
-      telnet_client_printf(c, "removed %s from HNA table\n\r", olsr_ip_prefix_to_string(&hna_entry));
-    else
-      telnet_client_printf(c, "FAILED: %s not found in HNA table\n\r", olsr_ip_prefix_to_string(&hna_entry));
-  }
-  else
-    telnet_client_printf(c, USAGE_FMT, hna_cmd.usage_text);
-}
-
-
-
-void interface(int c, int argc, char* argv[])
-{
-  if(argc == 2 && !strcmp(argv[1], "list")) {
-    const struct olsr_if *ifs;
-    for (ifs = olsr_cnf->interfaces; ifs != NULL; ifs = ifs->next)
-      telnet_client_printf(c, " %-10s (%s)\n\r", ifs->name, (!(ifs->interf)) ? "DOWN" : "UP" );
-
-    return;
-  }
-
-  if(argc != 3) {
-    telnet_client_printf(c, USAGE_FMT, interface_cmd.usage_text);
-    return;
-  }
-
-  if(!strcmp(argv[1], "add")) {
-    const struct olsr_if *ifs = olsr_create_olsrif(argv[2], false);
-    if(!ifs) {
-      telnet_client_printf(c, "FAILED: to add interface '%s', see log output for further information\n\r", argv[2]);
-      return;
-    }
-/*
-  interface config deep copy
-    This is a short version of what the function
-      olsrd_sanity_check_cnf() @ src/cfgparser/olsrd_conf.c
-    does. Given the knowledge that cnfi and cnf are always different and that there are no
-    inteface specific lq_mults.
-    would be nice if the core would provide a function to do this...
-*/
-    memcpy((uint8_t*)ifs->cnf, (uint8_t*)olsr_cnf->interface_defaults, sizeof(*ifs->cnf));
-    memset((uint8_t*)ifs->cnfi, 0, sizeof(*ifs->cnfi));
-    {
-      struct olsr_lq_mult *mult, *mult_temp;
-      ifs->cnf->lq_mult=NULL;
-      for (mult = olsr_cnf->interface_defaults->lq_mult; mult; mult=mult->next) {
-        mult_temp=olsr_malloc(sizeof(struct olsr_lq_mult), "telnet inteface add mult_temp");
-        memcpy(mult_temp,mult,sizeof(struct olsr_lq_mult));
-        mult_temp->next=ifs->cnf->lq_mult;
-        ifs->cnf->lq_mult=mult_temp;
-      }
-    }
-/* end of interface config deep copy */
-  }
-  else if(!strcmp(argv[1], "del")) {
-    struct olsr_if *ifs = olsrif_ifwithname(argv[2]);
-    if(!ifs) {
-      telnet_client_printf(c, "FAILED: no such interface '%s'\n\r", argv[2]);
-      return;
-    }
-    olsr_remove_interface(ifs);
-/* 
-   actual removing interface from global interface list
-     why removes olsr_remove_interface() from ifnet but not form
-     olsr_cnf->intefaces???
-*/
-    if(olsr_cnf->interfaces == ifs) {
-      olsr_cnf->interfaces = ifs->next;
-      free(ifs);
-    } else {
-      struct olsr_if *if_tmp;
-      for (if_tmp = olsr_cnf->interfaces; if_tmp; if_tmp=if_tmp->next) {
-        if(if_tmp->next == ifs) {
-          if_tmp->next = ifs->next;
-          free(ifs);
-          break;
-        }
-      }
-    }
-/* end of actual removing interface from global interface list */    
-  }
-  else if(!strcmp(argv[1], "status")) {
-    const struct olsr_if *ifs = olsrif_ifwithname(argv[2]);
-    if(ifs) {
-      const struct interface *const rifs = ifs->interf;
-      telnet_client_printf(c, "Interface '%s':\n\r", ifs->name);
-      telnet_client_printf(c, " Status: %s\n\r", (!rifs) ? "DOWN" : "UP" );
-      if (!rifs)
-        return;
-
-      if (olsr_cnf->ip_version == AF_INET) {
-        struct ipaddr_str addrbuf, maskbuf, bcastbuf;
-        telnet_client_printf(c, " IP: %s\n\r", ip4_to_string(&addrbuf, rifs->int_addr.sin_addr));
-        telnet_client_printf(c, " MASK: %s\n\r", ip4_to_string(&maskbuf, rifs->int_netmask.sin_addr));
-        telnet_client_printf(c, " BCAST: %s\n\r", ip4_to_string(&bcastbuf, rifs->int_broadaddr.sin_addr));
-      } else {
-        struct ipaddr_str addrbuf, maskbuf;
-        telnet_client_printf(c, " IP: %s\n\r", ip6_to_string(&addrbuf, &rifs->int6_addr.sin6_addr));
-        telnet_client_printf(c, " MCAST: %s\n\r", ip6_to_string(&maskbuf, &rifs->int6_multaddr.sin6_addr));
-      }
-      telnet_client_printf(c, " MTU: %d\n\r", rifs->int_mtu);
-      telnet_client_printf(c, " WLAN: %s\n\r", rifs->is_wireless ? "Yes" : "No");
-      return;
-    }
-    telnet_client_printf(c, "FAILED: no such interface '%s'\n\r", argv[2]);
-    return;
-  }
-  else
-    telnet_client_printf(c, USAGE_FMT, interface_cmd.usage_text);
-}
-
-
-
-void quit(int c, int argc __attribute__ ((unused)), char* argv[] __attribute__ ((unused)))
+void cmd_quit(int c, int argc __attribute__ ((unused)), char* argv[] __attribute__ ((unused)))
 {
   if(argc != 1) {
-    telnet_client_printf(c, USAGE_FMT, quit_cmd.usage_text);
+    print_usage(c, &quit_cmd);
     return;
   }
 
   telnet_client_quit(c);
 }
 
+void cmd_terminate(int c, int argc, char* argv[])
+{
+  if(argc != 2) {
+    print_usage(c, &terminate_cmd);
+    return;
+  }
 
-void help(int c, int argc __attribute__ ((unused)), char* argv[] __attribute__ ((unused)))
+  olsr_exit(argv[1], EXIT_SUCCESS);
+}
+
+void cmd_help(int c, int argc __attribute__ ((unused)), char* argv[] __attribute__ ((unused)))
 {
   size_t i;
 
@@ -298,24 +145,13 @@ void help(int c, int argc __attribute__ ((unused)), char* argv[] __attribute__ (
     for(i = 0; i < sizeof(dispatch_table)/sizeof(cmd_t*); ++i) {
       if(!strcmp(dispatch_table[i]->command, argv[1])) {
         telnet_client_printf(c, "%s: %s\n\r\n\r", dispatch_table[i]->command, dispatch_table[i]->short_help);
-        telnet_client_printf(c, USAGE_FMT, dispatch_table[i]->usage_text);
+        print_usage(c, dispatch_table[i]);
         return;
       }
     }
     return telnet_client_printf(c, "command '%s' unknown\n\r", argv[1]);
   default:
-    return telnet_client_printf(c, USAGE_FMT, help_cmd.usage_text);
+    print_usage(c, &help_cmd); return;
   }
 
-}
-
-
-void terminate(int c, int argc, char* argv[])
-{
-  if(argc != 2) {
-    telnet_client_printf(c, USAGE_FMT, terminate_cmd.usage_text);
-    return;
-  }
-
-  olsr_exit(argv[1], EXIT_SUCCESS);
 }

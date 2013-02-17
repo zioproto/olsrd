@@ -45,17 +45,9 @@
  * Dynamic linked library for the olsr.org olsr daemon
  */
 
-#ifndef _OLSRD_TELNET_CMD_HANDLER
-#define _OLSRD_TELNET_CMD_HANDLER
+#ifndef _OLSRD_TELNET_CMD_HNA
+#define _OLSRD_TELNET_CMD_HNA
 
-typedef struct {
-  const char* command;
-  void (*callback)(int, int, char**);
-  const char* short_help;
-  const char* usage_text;
-} cmd_t;
+extern cmd_t hna_cmd;
 
-void print_usage(int, cmd_t*);
-void cmd_dispatcher(int, int, char**);
-
-#endif /* _OLSRD_TELNET_CMD_HANDLER */
+#endif /* _OLSRD_TELNET_CMD_HNA */
