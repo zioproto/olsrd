@@ -91,6 +91,7 @@ static void cmd_interface_add(int c, const char* name)
     }
   }
 /* end of interface config deep copy */
+  telnet_client_printf(c, "interface %s added\n\r", name);
 }
 
 static void cmd_interface_del(int c, const char* name)
@@ -122,6 +123,7 @@ static void cmd_interface_del(int c, const char* name)
     }
   }
 /* also removing interface from global configuration */
+  telnet_client_printf(c, "interface %s removed\n\r", name);
 }
 
 static void cmd_interface_status(int c, const char* name)
@@ -156,7 +158,7 @@ static void cmd_interface(int c, int argc, char* argv[])
   if(argc == 2 && !strcmp(argv[1], "list")) {
     const struct olsr_if *ifs;
     for (ifs = olsr_cnf->interfaces; ifs != NULL; ifs = ifs->next)
-      telnet_client_printf(c, " %-10s (%s)\n\r", ifs->name, (!(ifs->interf)) ? "DOWN" : "UP" );
+      telnet_client_printf(c, " %-10s (%s)\n\r", ifs->name, (!(ifs->interf)) ? "Down" : "Up" );
 
     return;
   }
