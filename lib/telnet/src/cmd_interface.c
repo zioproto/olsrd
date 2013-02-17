@@ -104,7 +104,8 @@ static void cmd_interface_del(int c, const char* name)
     telnet_client_printf(c, "FAILED: '%s' is the sole interface and olsrd is configured not to run without interfaces\n\r", name);
     return;
   }
-  olsr_remove_interface(ifs);
+  if(ifs->interf)
+    olsr_remove_interface(ifs);
 
 /* also removing interface from global configuration */
   if(olsr_cnf->interfaces == ifs) {
@@ -129,7 +130,7 @@ static void cmd_interface_status(int c, const char* name)
   if(ifs) {
     const struct interface *const rifs = ifs->interf;
     telnet_client_printf(c, "Interface '%s':\n\r", ifs->name);
-    telnet_client_printf(c, " Status: %s\n\r", (!rifs) ? "DOWN" : "UP" );
+    telnet_client_printf(c, " Status: %s\n\r", (!rifs) ? "Down" : "Up" );
     if (!rifs)
       return;
 
