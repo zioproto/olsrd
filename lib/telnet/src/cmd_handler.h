@@ -61,6 +61,7 @@ typedef struct telnet_cmd_struct {
 void telnet_print_usage(int, cmd_t*);
 int telnet_cmd_add(cmd_t*);
 cmd_t* telnet_cmd_remove(const char*);
+
 int telnet_cmd_dispatch(int, int, char**);
 
 #endif /* _OLSRD_TELNET_CMD_HANDLER */
