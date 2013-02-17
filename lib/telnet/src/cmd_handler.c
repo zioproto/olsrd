@@ -193,12 +193,13 @@ void interface(int c, int argc, char* argv[])
       return;
     }
 /*
-  This is a short version of what the function
-    olsrd_sanity_check_cnf() @ src/cfgparser/olsrd_conf.c
-  does. Given the knowledge that cnfi and cnf are always different and that there are no
-  inteface specific lq_mults.
-  would be nice if the core would provide a function to do this...
- */
+  interface config deep copy
+    This is a short version of what the function
+      olsrd_sanity_check_cnf() @ src/cfgparser/olsrd_conf.c
+    does. Given the knowledge that cnfi and cnf are always different and that there are no
+    inteface specific lq_mults.
+    would be nice if the core would provide a function to do this...
+*/
     memcpy((uint8_t*)ifs->cnf, (uint8_t*)olsr_cnf->interface_defaults, sizeof(*ifs->cnf));
     memset((uint8_t*)ifs->cnfi, 0, sizeof(*ifs->cnfi));
     {
@@ -220,6 +221,24 @@ void interface(int c, int argc, char* argv[])
       return;
     }
     olsr_remove_interface(ifs);
+/* 
+   actual removing interface from global interface list
+     why is this not done by olsr_remove_interface()??? 
+*/
+    if(olsr_cnf->interfaces == ifs) {
+      olsr_cnf->interfaces = ifs->next;
+      free(ifs);
+    } else {
+      struct olsr_if *if_tmp;
+      for (if_tmp = olsr_cnf->interfaces; if_tmp; if_tmp=if_tmp->next) {
+        if(if_tmp->next == ifs) {
+          if_tmp->next = ifs->next;
+          free(ifs);
+          break;
+        }
+      }
+    }
+/* end of actual removing interface from global interface list */    
   }
   else if(!strcmp(argv[1], "status")) {
     const struct olsr_if *ifs = olsrif_ifwithname(argv[2]);
