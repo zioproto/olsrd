@@ -52,6 +52,8 @@
 
 #include <string.h>
 
+#include <unistd.h>
+
 #include "olsr.h"
 #include "olsr_types.h"
 #include "ipcalc.h"
@@ -98,12 +100,13 @@ static void cmd_interface_del(int c, const char* name)
     telnet_client_printf(c, "FAILED: no such interface '%s'\n\r", name);
     return;
   }
+  if((ifnet->int_next == NULL) && (!olsr_cnf->allow_no_interfaces)) {
+    telnet_client_printf(c, "FAILED: '%s' is the sole interface and olsrd is configured not to run without interfaces\n\r", name);
+    return;
+  }
   olsr_remove_interface(ifs);
-/* 
-   actual removing interface from global interface list
-     why removes olsr_remove_interface() from ifnet but not form
-     olsr_cnf->intefaces???
-*/
+
+/* also removing interface from global configuration */
   if(olsr_cnf->interfaces == ifs) {
     olsr_cnf->interfaces = ifs->next;
     free(ifs);
@@ -117,7 +120,7 @@ static void cmd_interface_del(int c, const char* name)
       }
     }
   }
-/* end of actual removing interface from global interface list */    
+/* also removing interface from global configuration */
 }
 
 static void cmd_interface_status(int c, const char* name)
@@ -129,7 +132,7 @@ static void cmd_interface_status(int c, const char* name)
     telnet_client_printf(c, " Status: %s\n\r", (!rifs) ? "DOWN" : "UP" );
     if (!rifs)
       return;
-    
+
     if (olsr_cnf->ip_version == AF_INET) {
       struct ipaddr_str addrbuf, maskbuf, bcastbuf;
       telnet_client_printf(c, " IP: %s\n\r", ip4_to_string(&addrbuf, rifs->int_addr.sin_addr));
