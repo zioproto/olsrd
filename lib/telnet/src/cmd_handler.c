@@ -141,14 +141,19 @@ inline void telnet_print_usage(int c, cmd_t* cmd)
 
 int telnet_cmd_dispatch(int c, int argc, char* argv[])
 {
-  cmd_t* tmp_cmd;
+  telnet_cmd_function cmd_f;
 
   if(argc < 1)
     return -1;
 
-  tmp_cmd = telnet_cmd_find(argv[0]);
-  if(tmp_cmd) {
-    telnet_client_set_continue_function(c, tmp_cmd->cmd_function->f(c, argc, argv));
+  cmd_f = telnet_client_get_continue_function(c);
+  if(!cmd_f) {
+    cmd_t* tmp_cmd = telnet_cmd_find(argv[0]);
+    if(tmp_cmd)
+      cmd_f = tmp_cmd->cmd_function;
+  }
+  if(cmd_f) {
+    telnet_client_set_continue_function(c, cmd_f->f(c, argc, argv));
     return 0;
   }
 

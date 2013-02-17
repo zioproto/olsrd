@@ -66,7 +66,7 @@ struct telnet_cmd_functor cmd_terminate_functor = { &cmd_terminate };
 cmd_t cmd_terminate_struct = {
   "terminate", &cmd_terminate_functor,
   "terminate olsr daemon",
-  " terminate <reason>",
+  " terminate",
   NULL
 };
 
@@ -75,14 +75,28 @@ int cmd_terminate_init(void)
   return telnet_cmd_add(&cmd_terminate_struct);
 }
 
-
-static telnet_cmd_function cmd_terminate(int c, int argc, char* argv[])
+static telnet_cmd_function cmd_terminate_ask(int c, int argc, char* argv[])
 {
-  if(argc != 2) {
-    telnet_print_usage(c, &cmd_terminate_struct);
+  if(argc != 1) {
+    telnet_client_printf(c, "expected yes or no, shutdown aborted\n\r");
     return NULL;
   }
 
-  olsr_exit(argv[1], EXIT_SUCCESS);
+  if(!strcmp(argv[0], "yes"))
+    olsr_exit(argv[1], EXIT_SUCCESS);
+
+  telnet_client_printf(c, "shutdown aborted..\n\r");
+
   return NULL;
+}
+struct telnet_cmd_functor cmd_terminate_ask_functor = { &cmd_terminate_ask };
+
+static telnet_cmd_function cmd_terminate(int c, int argc, char* argv[] __attribute__ ((unused)))
+{
+  if(argc != 1) {
+    telnet_print_usage(c, &cmd_terminate_struct);
+    return NULL;
+  }
+  telnet_client_printf(c, "really want to quit olsr daemon (type yes or no)? ");
+  return &cmd_terminate_ask_functor;
 }

@@ -297,6 +297,14 @@ void telnet_client_set_continue_function(int c, telnet_cmd_function f)
   clients[c].continue_function = f;
 }
 
+telnet_cmd_function telnet_client_get_continue_function(int c)
+{
+  if(c < 0 || c >= MAX_CLIENTS)
+    return NULL;
+
+  return clients[c].continue_function;
+}
+
 
 static void
 telnet_action(int fd, void *data __attribute__ ((unused)), unsigned int flags __attribute__ ((unused)))
@@ -399,7 +407,8 @@ telnet_client_handle_cmd(int c, char* cmd)
   }
 
   telnet_cmd_dispatch(c, i, argv);
-  telnet_client_prompt(c);
+  if(!clients[c].continue_function)
+    telnet_client_prompt(c);
 }
 
 static void
