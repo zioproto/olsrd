@@ -15,13 +15,14 @@ functions:
   terminate  - terminates the olsr daemon
   help       - print usage strings and lists all available commands
 
-Besides that there is a command for altering and inspecting HNA and
+Besides that there are commands for altering and inspecting HNA and
 interface lists.
 
 If you want to add additional commands you have to write something like
 this:
 
 <snip>
+#include "olsrd_telnet.h"
 #include "lib/telnet/src/cmd_handler.h"
 
 static int cmd_mycmd(int, int, char**);
@@ -41,8 +42,10 @@ static int cmd_mycmd(int c, int argc, char* argv[])
   }
 
   /* do something useful or at least funny ;) */
-  if(success)
+  if(success) {
+    telnet_client_printf(c, "it worked!");
     return 0;
+  }
 
   telnet_print_usage(c, &cmd_mycmd_struct);
   return -1;
