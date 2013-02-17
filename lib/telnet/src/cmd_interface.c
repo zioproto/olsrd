@@ -63,16 +63,12 @@
 #include "cmd_handler.h"
 #include "cmd_interface.h"
 
-static telnet_cmd_function cmd_interface(int, int, char**);
-struct telnet_cmd_functor cmd_interface_functor = { &cmd_interface };
-cmd_t cmd_interface_struct = {
-   "interface", &cmd_interface_functor,
-   "add/remove or list interfaces",
-   " interface (add|del) <name>\n\r"
-   " interface status <name>\n\r"
-   " interface list",
-   NULL
-};
+DEFINE_TELNET_CMD(cmd_interface_struct,
+                  "interface", handle_interface,
+                  "add/remove or list interfaces",
+                  " interface (add|del) <name>\n\r"
+                  " interface status <name>\n\r"
+                  " interface list");
 
 int cmd_interface_init(void)
 {
@@ -173,7 +169,7 @@ static telnet_cmd_function cmd_interface_status(int c, const char* name)
   return NULL;
 }
 
-static telnet_cmd_function cmd_interface(int c, int argc, char* argv[])
+static telnet_cmd_function handle_interface(int c, int argc, char* argv[])
 {
   if(argc == 2 && !strcmp(argv[1], "list")) {
     const struct olsr_if *ifs;

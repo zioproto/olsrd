@@ -61,6 +61,17 @@ typedef struct telnet_cmd_struct {
   struct telnet_cmd_struct* next;
 } cmd_t;
 
+#define STR_CONCAT(x, y) x ## y
+#define DEFINE_TELNET_CMD(CMD_STRUCT, CMD_CODE, HANDLE_FUNCTION, SHORT_HELP, USAGE)     \
+static telnet_cmd_function HANDLE_FUNCTION(int, int, char**);                           \
+struct telnet_cmd_functor STR_CONCAT(HANDLE_FUNCTION, _functor) = { &HANDLE_FUNCTION }; \
+cmd_t CMD_STRUCT = {                                                                    \
+  CMD_CODE, &STR_CONCAT(HANDLE_FUNCTION, _functor),                                     \
+  SHORT_HELP,                                                                           \
+  USAGE,                                                                                \
+  NULL                                                                                  \
+}
+
 int telnet_cmd_add(cmd_t*);
 cmd_t* telnet_cmd_remove(const char*);
 void telnet_print_usage(int, cmd_t*);

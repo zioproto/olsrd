@@ -60,22 +60,17 @@
 #include "cmd_handler.h"
 #include "cmd_terminate.h"
 
-
-static telnet_cmd_function cmd_terminate(int, int, char**);
-struct telnet_cmd_functor cmd_terminate_functor = { &cmd_terminate };
-cmd_t cmd_terminate_struct = {
-  "terminate", &cmd_terminate_functor,
-  "terminate olsr daemon",
-  " terminate",
-  NULL
-};
+DEFINE_TELNET_CMD(cmd_terminate_struct,
+                  "terminate", handle_terminate,
+                  "terminate olsr daemon",
+                  " terminate");
 
 int cmd_terminate_init(void)
 {
   return telnet_cmd_add(&cmd_terminate_struct);
 }
 
-static telnet_cmd_function cmd_terminate_ask(int c, int argc, char* argv[])
+static telnet_cmd_function handle_inquiry(int c, int argc, char* argv[])
 {
   if(argc != 1) {
     telnet_client_printf(c, "expected yes or no, shutdown aborted\n\r");
@@ -89,14 +84,14 @@ static telnet_cmd_function cmd_terminate_ask(int c, int argc, char* argv[])
 
   return NULL;
 }
-struct telnet_cmd_functor cmd_terminate_ask_functor = { &cmd_terminate_ask };
+static struct telnet_cmd_functor handle_inquiry_functor = { &handle_inquiry };
 
-static telnet_cmd_function cmd_terminate(int c, int argc, char* argv[] __attribute__ ((unused)))
+static telnet_cmd_function handle_terminate(int c, int argc, char* argv[] __attribute__ ((unused)))
 {
   if(argc != 1) {
     telnet_print_usage(c, &cmd_terminate_struct);
     return NULL;
   }
   telnet_client_printf(c, "really want to quit olsr daemon (type yes or no)? ");
-  return &cmd_terminate_ask_functor;
+  return &handle_inquiry_functor;
 }

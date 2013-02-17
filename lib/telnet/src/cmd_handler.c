@@ -60,8 +60,8 @@
 #include "cmd_handler.h"
 
 
-static telnet_cmd_function cmd_help(int, int, char**);
-struct telnet_cmd_functor cmd_help_functor = { &cmd_help };
+static telnet_cmd_function handle_help(int, int, char**);
+struct telnet_cmd_functor cmd_help_functor = { &handle_help };
 cmd_t cmd_help_struct = {
   "help", &cmd_help_functor,
   "prints usage strings",
@@ -69,8 +69,8 @@ cmd_t cmd_help_struct = {
   NULL
 };
 
-static telnet_cmd_function cmd_quit(int, int, char**);
-struct telnet_cmd_functor cmd_quit_functor = { &cmd_quit };
+static telnet_cmd_function handle_quit(int, int, char**);
+struct telnet_cmd_functor cmd_quit_functor = { &handle_quit };
 cmd_t cmd_quit_struct = {
   "quit", &cmd_quit_functor,
   "terminates telnet connection",
@@ -163,7 +163,7 @@ int telnet_cmd_dispatch(int c, int argc, char* argv[])
 
 
 
-static telnet_cmd_function cmd_quit(int c, int argc, char* argv[] __attribute__ ((unused)))
+static telnet_cmd_function handle_quit(int c, int argc, char* argv[] __attribute__ ((unused)))
 {
   if(argc != 1) {
     telnet_print_usage(c, &cmd_quit_struct);
@@ -174,7 +174,7 @@ static telnet_cmd_function cmd_quit(int c, int argc, char* argv[] __attribute__ 
   return NULL;
 }
 
-static telnet_cmd_function cmd_help(int c, int argc, char* argv[])
+static telnet_cmd_function handle_help(int c, int argc, char* argv[])
 {
   cmd_t* tmp_cmd;
 

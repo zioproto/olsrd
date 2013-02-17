@@ -60,15 +60,11 @@
 #include "cmd_handler.h"
 #include "cmd_hna.h"
 
-static telnet_cmd_function cmd_hna(int, int, char**);
-struct telnet_cmd_functor cmd_hna_functor = { &cmd_hna };
-cmd_t cmd_hna_struct = {
-   "hna", &cmd_hna_functor,
-   "alter or show HNA table",
-   " hna (add|del) <address>/<netmask>\n\r"
-   " hna list",
-   NULL
-};
+DEFINE_TELNET_CMD(cmd_hna_struct,
+                  "hna", handle_hna,
+                  "alter or show HNA table",
+                  " hna (add|del) <address>/<netmask>\n\r"
+                  " hna list");
 
 int cmd_hna_init(void)
 {
@@ -99,7 +95,7 @@ static telnet_cmd_function cmd_hna_del(int c, struct olsr_ip_prefix* hna_entry)
   return NULL;
 }
 
-static telnet_cmd_function cmd_hna(int c, int argc, char* argv[])
+static telnet_cmd_function handle_hna(int c, int argc, char* argv[])
 {
   struct olsr_ip_prefix hna_entry;
 
