@@ -186,15 +186,15 @@ rpm:
 
 # This is quite ugly but at least it works
 ifeq ($(OS),linux)
-SUBDIRS := arprefresh bmf dot_draw dyn_gw dyn_gw_plain httpinfo jsoninfo mdns mini nameservice p2pd pgraph pud quagga secure sgwdynspeed txtinfo watchdog
+SUBDIRS := arprefresh bmf dot_draw dyn_gw dyn_gw_plain httpinfo jsoninfo mdns mini nameservice p2pd pgraph pud quagga secure sgwdynspeed telnet txtinfo watchdog
 else
 ifeq ($(OS),win32)
-SUBDIRS := dot_draw httpinfo jsoninfo mini pgraph secure txtinfo
+SUBDIRS := dot_draw httpinfo jsoninfo mini pgraph secure telnet txtinfo
 else
 ifeq ($(OS),android)
-SUBDIRS := arprefresh bmf dot_draw dyn_gw dyn_gw_plain httpinfo jsoninfo mdns mini nameservice p2pd pgraph pud secure sgwdynspeed txtinfo watchdog
+SUBDIRS := arprefresh bmf dot_draw dyn_gw dyn_gw_plain httpinfo jsoninfo mdns mini nameservice p2pd pgraph pud secure sgwdynspeed telnet txtinfo watchdog
 else
-SUBDIRS := dot_draw httpinfo jsoninfo mini nameservice pgraph secure txtinfo watchdog
+SUBDIRS := dot_draw httpinfo jsoninfo mini nameservice pgraph secure telnet txtinfo watchdog
 endif
 endif
 endif
@@ -413,6 +413,18 @@ sgwdynspeed_install:
 
 sgwdynspeed_uninstall:
 		$(MAKECMDPREFIX)$(MAKECMD) -C lib/sgwdynspeed DESTDIR=$(DESTDIR) uninstall
+
+telnet:
+		$(MAKECMDPREFIX)$(MAKECMD) -C lib/telnet
+
+telnet_clean:
+		$(MAKECMDPREFIX)$(MAKECMD) -C lib/telnet DESTDIR=$(DESTDIR) clean
+
+telnet_install:
+		$(MAKECMDPREFIX)$(MAKECMD) -C lib/telnet DESTDIR=$(DESTDIR) install
+
+telnet_uninstall:
+		$(MAKECMDPREFIX)$(MAKECMD) -C lib/telnet DESTDIR=$(DESTDIR) uninstall
 
 txtinfo:
 		$(MAKECMDPREFIX)$(MAKECMD) -C lib/txtinfo

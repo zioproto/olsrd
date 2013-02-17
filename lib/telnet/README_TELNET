@@ -1,0 +1,35 @@
+
+The telnet plugin aims ...
+
+PLUGIN USAGE
+============
+
+tba...
+
+hna add <address>/<mask>
+
+hna del <address>/<mask>
+
+tba...
+
+PLUGIN CONFIGURATION
+====================
+
+The plugin accepts two parameters: "port" and "bind". There are no
+futher parameters. 
+
+LoadPlugin "olsrd_telnet.so.0.0"
+{
+    # the default port is 2342 but you can change it like this:
+    #PlParam     "port"   "1234"
+
+    # the address to bind the socket to, if omitted the plugin
+    # will bind to the wildcard adress
+    #PlParam      "listen" "127.0.0.1"
+}
+
+
+Example Usage
+=============
+
+tba...
