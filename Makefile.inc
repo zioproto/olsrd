@@ -242,7 +242,7 @@ CPPFLAGS +=	-DNODEBUG
 endif
 
 ifeq ($(OS),linux)
-CPPFLAGS+=-DHTTPINFO_PUD -I$(TOPDIR)/lib -I$(TOPDIR)/lib/pud/nmealib/include -I$(TOPDIR)/lib/pud/wireformat/include
+CPPFLAGS+=-DHTTPINFO_PUD -DTELNET_FOREIGN_CMDS -I$(TOPDIR)/lib -I$(TOPDIR)/lib/pud/nmealib/include -I$(TOPDIR)/lib/pud/wireformat/include
 endif
 
 # a make function to quote "/" and "."

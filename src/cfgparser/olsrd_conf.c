@@ -922,6 +922,12 @@ set_default_cnf(struct olsrd_config *cnf)
 #ifdef HTTPINFO_PUD
   cnf->pud_position = NULL;
 #endif /* HTTPINFO_PUD */
+
+#ifdef TELNET_FOREIGN_CMDS
+  cnf->telnet_foreign_cmds.table = NULL;
+  cnf->telnet_foreign_cmds.client_quit = NULL;
+  cnf->telnet_foreign_cmds.client_printf = NULL;
+#endif /* TELNET_FOREIGN_CMDS */
 }
 
 struct if_config_options *

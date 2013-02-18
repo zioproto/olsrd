@@ -48,6 +48,10 @@
 #include "pud/src/receiver.h"
 #endif /* HTTPINFO_PUD */
 
+#ifdef TELNET_FOREIGN_CMDS
+#include "telnet/include/telnet_cmd_core.h"
+#endif /* TELNET_FOREIGN_CMDS */
+
 /* set to 1 to collect all startup sleep into one sleep
  * (just as long as the longest sleep)
  * useful if many errors on many interfaces */
@@ -341,6 +345,10 @@ struct olsrd_config {
 #ifdef HTTPINFO_PUD
   TransmitGpsInformation * pud_position;
 #endif /* HTTPINFO_PUD */
+
+#ifdef TELNET_FOREIGN_CMDS
+  telnet_foreign_cmd_t telnet_foreign_cmds;
+#endif /* TELNET_FOREIGN_CMDS */
 };
 
 #if defined __cplusplus
