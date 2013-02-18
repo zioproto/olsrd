@@ -77,16 +77,12 @@ const char* cmd_terminate_get_command(void)
 
 static telnet_cmd_function handle_inquiry(int c, int argc, char* argv[])
 {
-  if(argc != 1) {
-    telnet_client_printf(c, "expected yes or no, shutdown aborted\n\r");
+  if(argc != 1 || strcmp(argv[0], "YES")) {
+    telnet_client_printf(c, "shutdown aborted\n\r");
     return NULL;
   }
 
-  if(!strcmp(argv[0], "yes"))
-    olsr_exit(argv[1], EXIT_SUCCESS);
-
-  telnet_client_printf(c, "shutdown aborted..\n\r");
-
+  olsr_exit(argv[1], EXIT_SUCCESS);
   return NULL;
 }
 static struct telnet_cmd_functor handle_inquiry_functor = { &handle_inquiry };
@@ -97,6 +93,6 @@ static telnet_cmd_function handle_terminate(int c, int argc, char* argv[] __attr
     telnet_print_usage(c, &cmd_terminate_struct);
     return NULL;
   }
-  telnet_client_printf(c, "really want to quit olsr daemon (type yes or no)? ");
+  telnet_client_printf(c, "really want to quit olsr daemon (type uppercase YES to confirm)? ");
   return &handle_inquiry_functor;
 }
