@@ -88,9 +88,9 @@
   do {                                                                         \
     if(!strcmp(COMMAND, STR_CONCAT3(cmd_, CMD, _get_command()) )) {            \
       if(! STR_CONCAT3(cmd_, CMD, _init()) )                                   \
-        olsr_printf(0, "(TELNET) failed: enabling command '%s'\n", COMMAND);   \
+        olsr_printf(1, "(TELNET) failed: enabling command '%s'\n", COMMAND);   \
       else                                                                     \
-        olsr_printf(0, "(TELNET) command '%s' enabled\n", COMMAND);            \
+        olsr_printf(2, "(TELNET) command '%s' enabled\n", COMMAND);            \
     }                                                                          \
   } while(false)
 
