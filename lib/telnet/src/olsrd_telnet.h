@@ -54,8 +54,14 @@
 #include "olsrd_plugin.h"
 #include "plugin_util.h"
 
+struct string_list {
+  char* string;
+  struct string_list* next;
+};
 extern union olsr_ip_addr telnet_listen_ip;
 extern int telnet_port;
+extern struct string_list* telnet_enabled_commands;
+extern bool telnet_allow_foreign;
 
 int olsrd_plugin_interface_version(void);
 int olsrd_plugin_init(void);

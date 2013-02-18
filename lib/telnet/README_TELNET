@@ -15,8 +15,9 @@ functions:
   help       - print usage strings and lists all available commands
 
 Besides that there are commands for altering and inspecting HNA and
-interface lists and a command to terminate the whole olsr daemon. All these
-commands my be globally disabled (see PLUGIN CONFIGURATION).
+interface lists and a command to terminate the whole olsr daemon. These
+commands can be globally disabled (see PLUGIN CONFIGURATION). The built-in
+commands are always enabled.
 
 If you want to add additional commands you have to write something like
 this:
@@ -71,9 +72,6 @@ the command is completed. The terminate command is a nice example for such a inq
 PLUGIN CONFIGURATION
 ====================
 
-The plugin accepts two parameters: "port" and "bind". There are no
-further parameters.
-
 LoadPlugin "olsrd_telnet.so.0.0"
 {
     # the default port is 2023 but you can change it like this:
@@ -82,6 +80,16 @@ LoadPlugin "olsrd_telnet.so.0.0"
     # the address to bind the socket to, if omitted the plugin
     # will bind to the wildcard adress
     #PlParam      "listen" "127.0.0.1"
+
+    # whitelist for commands, one line per command, if omitted all commands
+    # are enabled
+    #PlParam      "enable" "hna"
+    #PlParam      "enable" "interface"
+    #PlParam      "enable" "terminate"
+
+    # allow other plugins to add commands to the command table
+    # by default this is not allowed
+    #PlParam      "allowforeign" "yes"
 }
 
 

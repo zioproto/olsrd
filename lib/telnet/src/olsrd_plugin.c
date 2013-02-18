@@ -50,6 +50,7 @@
 #include <sys/types.h>
 #include <netinet/in.h>
 
+#include "olsr.h"
 #include "olsrd_plugin.h"
 #include "olsrd_telnet.h"
 #include "defs.h"
@@ -62,6 +63,8 @@
 
 union olsr_ip_addr telnet_listen_ip;
 int telnet_port;
+struct string_list* telnet_enabled_commands;
+bool telnet_allow_foreign;
 
 static void my_init(void) __attribute__ ((constructor));
 static void my_fini(void) __attribute__ ((destructor));
@@ -82,6 +85,8 @@ my_init(void)
   } else {
     telnet_listen_ip.v6 = in6addr_any;
   }
+  telnet_enabled_commands = NULL;
+  telnet_allow_foreign = false;
 }
 
 /**
@@ -105,9 +110,27 @@ olsrd_plugin_interface_version(void)
   return PLUGIN_INTERFACE_VERSION;
 }
 
+static int
+add_plugin_string_list(const char *value, void *data, set_plugin_parameter_addon addon __attribute__ ((unused)))
+{
+  struct string_list **en = data;
+  struct string_list* s = olsr_malloc(sizeof(struct string_list), __func__);
+  s->string = strdup(value);
+  if (!s->string) {
+    olsr_printf(1, "(TELNET) register param enable out of memory!\n");
+    exit(0);
+  }
+  s->next = *en;
+  *en = s;
+
+  return 0;
+}
+
 static const struct olsrd_plugin_parameters plugin_parameters[] = {
   {.name = "port",.set_plugin_parameter = &set_plugin_port,.data = &telnet_port},
   {.name = "listen",.set_plugin_parameter = &set_plugin_ipaddress,.data = &telnet_listen_ip},
+  {.name = "enable",.set_plugin_parameter = &add_plugin_string_list,.data = &telnet_enabled_commands},
+  {.name = "allowforeign",.set_plugin_parameter = &set_plugin_boolean,.data = &telnet_allow_foreign},
 };
 
 void

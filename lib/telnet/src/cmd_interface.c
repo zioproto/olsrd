@@ -75,6 +75,11 @@ int cmd_interface_init(void)
   return telnet_cmd_add(&cmd_interface_struct);
 }
 
+const char* cmd_interface_get_command(void)
+{
+  return cmd_interface_struct.command;
+}
+
 
 static telnet_cmd_function cmd_interface_add(int c, const char* name)
 {

@@ -49,5 +49,6 @@
 #define _OLSRD_TELNET_CMD_HNA
 
 int cmd_hna_init(void);
+const char* cmd_hna_get_command(void);
 
 #endif /* _OLSRD_TELNET_CMD_HNA */

@@ -49,5 +49,6 @@
 #define _OLSRD_TELNET_CMD_INTERFACE
 
 int cmd_interface_init(void);
+const char* cmd_interface_get_command(void);
 
 #endif /* _OLSRD_TELNET_CMD_INTERFACE */

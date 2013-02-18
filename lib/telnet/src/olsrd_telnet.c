@@ -139,29 +139,61 @@ olsrd_plugin_init(void)
 void
 olsr_plugin_exit(void)
 {
-  if (telnet_socket != -1)
+  int i;
+  struct string_list* s = telnet_enabled_commands;
+  while(s) {
+    struct string_list* deletee = s;
+    s = s->next;
+    free(deletee->string);
+    free(deletee);
+  }
+
+  for(i=0; i<MAX_CLIENTS; ++i) {
+    if(clients[i].fd != -1) {
+      remove_olsr_socket(clients[i].fd, &telnet_client_action, NULL);
+      close(clients[i].fd);
+    }
+    abuf_free(&(clients[i].out));
+    abuf_free(&(clients[i].in));
+  }
+
+  if (telnet_socket != -1) {
+    remove_olsr_socket(telnet_socket, &telnet_action, NULL);
     close(telnet_socket);
+  }
+}
+
+#define STR_CONCAT3(x, y, z) x ## y ## z
+#define CHECK_ENABLE_COMMAND(COMMAND, CMD)                                     \
+  do {                                                                         \
+    if(!strcmp(COMMAND, STR_CONCAT3(cmd_, CMD, _get_command()) )) {   \
+      if(! STR_CONCAT3(cmd_, CMD, _init()) )                                   \
+        olsr_printf(0, "(TELNET) failed: enabling command '%s'\n", COMMAND);   \
+      else                                                                     \
+        olsr_printf(0, "(TELNET) command '%s' enabled\n", COMMAND);            \
+    }                                                                          \
+  } while(false)
+
+static void enable_command(const char* command)
+{
+  CHECK_ENABLE_COMMAND(command, terminate);
+  CHECK_ENABLE_COMMAND(command, interface);
+  CHECK_ENABLE_COMMAND(command, hna);
 }
 
 static void enable_commands(void)
 {
-  if(cmd_terminate_init()) {
-#ifndef NODEBUG
-    olsr_printf(1, "(TELNET) failed: enabling terminate command\n");
-#endif /* NODEBUG */
+  struct string_list* s;
+
+  if(!telnet_enabled_commands) {
+    enable_command(cmd_terminate_get_command());
+    enable_command(cmd_interface_get_command());
+    enable_command(cmd_hna_get_command());
+    return;
   }
 
-  if(cmd_hna_init()) {
-#ifndef NODEBUG
-    olsr_printf(1, "(TELNET) failed: enabling hna command\n");
-#endif /* NODEBUG */
-  }
-
-  if(cmd_interface_init()) {
-#ifndef NODEBUG
-    olsr_printf(1, "(TELNET) failed: enabling interface command\n");
-#endif /* NODEBUG */
-  }
+  for(s = telnet_enabled_commands; s; s = s->next)
+    enable_command(s->string);
 }
 
 static int

@@ -116,8 +116,8 @@ cmd_t* telnet_cmd_remove(const char* command)
   cmd_t* tmp_cmd;
 
   if(!command || !dispatch_table ||
-     !strcmp(command, cmd_help_struct->command) ||
-     !strcmp(command, cmd_quit_struct->command))
+     !strcmp(command, cmd_help_struct.command) ||
+     !strcmp(command, cmd_quit_struct.command))
     return NULL;
 
   if(!strcmp(dispatch_table->command, command)) {

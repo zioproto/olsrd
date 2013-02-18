@@ -70,6 +70,11 @@ int cmd_terminate_init(void)
   return telnet_cmd_add(&cmd_terminate_struct);
 }
 
+const char* cmd_terminate_get_command(void)
+{
+  return cmd_terminate_struct.command;
+}
+
 static telnet_cmd_function handle_inquiry(int c, int argc, char* argv[])
 {
   if(argc != 1) {

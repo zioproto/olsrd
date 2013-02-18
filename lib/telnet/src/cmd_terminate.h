@@ -49,5 +49,6 @@
 #define _OLSRD_TELNET_CMD_TERMINATE
 
 int cmd_terminate_init(void);
+const char* cmd_terminate_get_command(void);
 
 #endif /* _OLSRD_TELNET_CMD_TERMINATE */

@@ -71,6 +71,11 @@ int cmd_hna_init(void)
   return telnet_cmd_add(&cmd_hna_struct);
 }
 
+const char* cmd_hna_get_command(void)
+{
+  return cmd_hna_struct.command;
+}
+
 
 static telnet_cmd_function cmd_hna_add(int c, struct olsr_ip_prefix* hna_entry)
 {
