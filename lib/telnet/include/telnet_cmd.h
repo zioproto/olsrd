@@ -55,8 +55,6 @@ void telnet_client_printf(int, const char*, ...) __attribute__ ((format (printf,
 
 typedef struct {
   cmd_t* table;
-  int (*cmd_add)(cmd_t*);
-  cmd_t* (*cmd_remove)(const char*);
   void (*client_quit)(int);
   void (*client_printf)(int, const char*, ...);
 } telnet_foreign_cmd_t;

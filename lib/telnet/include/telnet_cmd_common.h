@@ -78,5 +78,4 @@ int telnet_cmd_add(cmd_t*);
 cmd_t* telnet_cmd_remove(const char*);
 #define telnet_print_usage(c, cmd) telnet_client_printf(c, "usage:\n\r%s\n\r", cmd.usage_text)
 
-
 #endif /* _OLSRD_TELNET_CMD_COMMON */
