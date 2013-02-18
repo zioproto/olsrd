@@ -74,6 +74,43 @@ cmd_t CMD_STRUCT = {                                                            
   NULL                                                                                  \
 }
 
+
+
+#define telnet_cmd_find_table(TABLE, COMMAND)                      \
+  do {                                                             \
+    cmd_t* tmp_cmd;                                                \
+    for(tmp_cmd = TABLE; tmp_cmd; tmp_cmd = tmp_cmd->next)         \
+      if(!strcmp(tmp_cmd->command, COMMAND))                       \
+        return tmp_cmd;                                            \
+  } while(false)
+
+#define telnet_cmd_add_table(TABLE, CMD)                           \
+  do {                                                             \
+    cmd_t* tmp_cmd;                                                \
+    for(tmp_cmd = TABLE; tmp_cmd; tmp_cmd = tmp_cmd->next)         \
+      if(!strcmp(tmp_cmd->command, CMD->command))                  \
+        return 0;                                                  \
+    CMD->next = TABLE;                                             \
+    TABLE = CMD;                                                   \
+  } while(false)
+
+#define telnet_cmd_remove_table(TABLE, COMMAND)                    \
+  do {                                                             \
+    cmd_t* tmp_cmd;                                                \
+    if(!strcmp(TABLE->command, COMMAND)) {                         \
+      cmd_t* removee = TABLE;                                      \
+      TABLE = TABLE->next;                                         \
+      return removee;                                              \
+    }                                                              \
+    for(tmp_cmd = TABLE; tmp_cmd->next; tmp_cmd = tmp_cmd->next) { \
+      if(!strcmp(tmp_cmd->next->command, COMMAND)) {               \
+        cmd_t* removee = tmp_cmd->next;                            \
+        tmp_cmd->next = tmp_cmd->next->next;                       \
+        return removee;                                            \
+      }                                                            \
+    }                                                              \
+  } while(false)
+
 int telnet_cmd_add(cmd_t*);
 cmd_t* telnet_cmd_remove(const char*);
 #define telnet_print_usage(c, cmd) telnet_client_printf(c, "usage:\n\r%s\n\r", cmd.usage_text)

@@ -80,59 +80,33 @@ static cmd_t* local_dispatch_table = &cmd_quit_struct;
 
 static inline cmd_t* telnet_cmd_find(const char* command)
 {
-  cmd_t* tmp_cmd;
-
   if(!command)
     return NULL;
 
-  for(tmp_cmd = local_dispatch_table; tmp_cmd; tmp_cmd = tmp_cmd->next)
-    if(!strcmp(tmp_cmd->command, command))
-      return tmp_cmd;
-
+  telnet_cmd_find_table(local_dispatch_table, command);
   return NULL;
 }
 
 int telnet_cmd_add(cmd_t* cmd)
 {
-  cmd_t* tmp_cmd;
-
   if(!cmd || !cmd->command || !cmd->cmd_function || !cmd->short_help || !cmd->usage_text)
     return 0;
 
-  tmp_cmd = telnet_cmd_find(cmd->command);
-  if(tmp_cmd)
-    return 0;
-
-  cmd->next = local_dispatch_table;
-  local_dispatch_table = cmd;
-
+  telnet_cmd_add_table(local_dispatch_table, cmd);
   return 1;
 }
 
 cmd_t* telnet_cmd_remove(const char* command)
 {
-  cmd_t* tmp_cmd;
-
   if(!command || !local_dispatch_table ||
      !strcmp(command, cmd_help_struct.command) ||
      !strcmp(command, cmd_quit_struct.command))
     return NULL;
 
-  if(!strcmp(local_dispatch_table->command, command)) {
-    cmd_t* removee = local_dispatch_table;
-    local_dispatch_table = local_dispatch_table->next;
-    return removee;
-  }
-  for(tmp_cmd = local_dispatch_table; tmp_cmd->next; tmp_cmd = tmp_cmd->next) {
-    if(!strcmp(tmp_cmd->next->command, command)) {
-      cmd_t* removee = tmp_cmd->next;
-      tmp_cmd->next = tmp_cmd->next->next;
-      return removee;
-    }
-  }
-
+  telnet_cmd_remove_table(local_dispatch_table, command);
   return NULL;
 }
+
 
 int telnet_cmd_dispatch(int c, int argc, char* argv[])
 {
