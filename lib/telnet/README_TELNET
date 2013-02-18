@@ -72,7 +72,7 @@ the command is completed. The terminate command is a nice example for such a inq
 PLUGIN CONFIGURATION
 ====================
 
-LoadPlugin "olsrd_telnet.so.0.0"
+LoadPlugin "olsrd_telnet.so.0.1"
 {
     # the default port is 2023 but you can change it like this:
     #PlParam     "port"   "1234"

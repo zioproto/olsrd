@@ -50,7 +50,7 @@
 #include "olsrd_telnet.h"
 
 #define PLUGIN_NAME    "telnet plugin"
-#define PLUGIN_VERSION "0.0"
+#define PLUGIN_VERSION "0.1"
 #define PLUGIN_AUTHOR   "Christian Pointner"
 #define MOD_DESC PLUGIN_NAME " " PLUGIN_VERSION " by " PLUGIN_AUTHOR
 #define PLUGIN_INTERFACE_VERSION 5
