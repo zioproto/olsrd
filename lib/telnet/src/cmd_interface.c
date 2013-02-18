@@ -59,7 +59,7 @@
 #include "ipcalc.h"
 #include "interfaces.h"
 
-#include "olsrd_telnet.h"
+#include "telnet_client.h"
 #include "cmd_handler.h"
 #include "cmd_interface.h"
 

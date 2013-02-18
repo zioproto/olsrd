@@ -53,10 +53,8 @@
 #include <string.h>
 
 #include "olsr.h"
-#include "olsr_types.h"
-#include "ipcalc.h"
 
-#include "olsrd_telnet.h"
+#include "telnet_client.h"
 #include "cmd_handler.h"
 #include "cmd_terminate.h"
 
