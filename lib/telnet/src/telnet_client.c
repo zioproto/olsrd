@@ -68,6 +68,8 @@
 #define close(x) closesocket(x)
 #endif /* _WIN32 */
 
+
+
 #define MAX_CLIENTS 3
 #define BUF_SIZE 1024
 #define MAX_ARGS 16
@@ -81,18 +83,16 @@ typedef struct {
 
 static client_t clients[MAX_CLIENTS];
 
-
-
-static void telnet_client_remove(int);
-static int telnet_client_find(int);
 static void telnet_client_prompt(int);
-static void telnet_client_handle_cmd(int, char*);
+static void telnet_client_remove(int);
 static void telnet_client_action(int, void *, unsigned int);
+static int telnet_client_find(int);
+static void telnet_client_handle_cmd(int, char*);
 static void telnet_client_read(int);
 static void telnet_client_write(int);
 
 
-
+/* needed by olsrd_telnet.c */
 int telnet_client_init(void)
 {
   int i, ret;
@@ -151,12 +151,7 @@ telnet_client_add(int fd)
 }
 
 
-static void
-telnet_client_prompt(int c)
-{
-  telnet_client_printf(c, "> ");
-}
-
+/* needed by command handler */
 void telnet_client_quit(int c)
 {
   if(c < 0 || c >= MAX_CLIENTS)
@@ -199,6 +194,14 @@ telnet_cmd_function telnet_client_get_continue_function(int c)
     return NULL;
 
   return clients[c].continue_function;
+}
+
+
+/* internal functions */
+static void
+telnet_client_prompt(int c)
+{
+  telnet_client_printf(c, "> ");
 }
 
 static void

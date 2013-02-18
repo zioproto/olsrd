@@ -51,11 +51,12 @@
 #include <stdarg.h>
 #include "cmd_handler.h"
 
+/* needed by olsrd_telnet.c */
 int telnet_client_init(void);
 void telnet_client_cleanup(void);
-
 int telnet_client_add(int);
 
+/* needed by command handler */
 void telnet_client_quit(int);
 void telnet_client_printf(int, const char*, ...) __attribute__ ((format (printf, 2, 3)));
 void telnet_client_set_continue_function(int, telnet_cmd_function);
