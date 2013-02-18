@@ -85,14 +85,12 @@
 #include "cmd_interface.h"
 #include "cmd_terminate.h"
 
+
 #ifdef _WIN32
 #define close(x) closesocket(x)
 #endif /* _WIN32 */
 
 static int telnet_socket;
-
-/* TELNET initialization function */
-static int plugin_telnet_init(void);
 
 static void telnet_action(int, void *, unsigned int);
 
@@ -118,51 +116,6 @@ typedef struct {
 
 static client_t clients[MAX_CLIENTS];
 
-
-
-/**
- *Do initialization here
- *
- *This function is called by the my_init
- *function in olsrd_plugin.c
- */
-int
-olsrd_plugin_init(void)
-{
-  telnet_socket = -1;
-  plugin_telnet_init();
-  return 1;
-}
-
-/**
- * destructor - called at unload
- */
-void
-olsr_plugin_exit(void)
-{
-  int i;
-  struct string_list* s = telnet_enabled_commands;
-  while(s) {
-    struct string_list* deletee = s;
-    s = s->next;
-    free(deletee->string);
-    free(deletee);
-  }
-
-  for(i=0; i<MAX_CLIENTS; ++i) {
-    if(clients[i].fd != -1) {
-      remove_olsr_socket(clients[i].fd, &telnet_client_action, NULL);
-      close(clients[i].fd);
-    }
-    abuf_free(&(clients[i].out));
-    abuf_free(&(clients[i].in));
-  }
-
-  if (telnet_socket != -1) {
-    remove_olsr_socket(telnet_socket, &telnet_action, NULL);
-    close(telnet_socket);
-  }
-}
 
 #define STR_CONCAT3(x, y, z) x ## y ## z
 #define CHECK_ENABLE_COMMAND(COMMAND, CMD)                                     \
@@ -197,12 +150,16 @@ static void enable_commands(void)
     enable_command(s->string);
 }
 
-static int
-plugin_telnet_init(void)
+
+
+
+int
+olsrd_telnet_init(void)
 {
   union olsr_sockaddr sst;
   uint32_t yes = 1, i;
   socklen_t addrlen;
+  telnet_socket = -1;
 
   /* Init telnet socket */
   if ((telnet_socket = socket(olsr_cnf->ip_version, SOCK_STREAM, 0)) == -1) {
@@ -294,6 +251,107 @@ plugin_telnet_init(void)
   return 1;
 }
 
+
+
+/**
+ * destructor - called at unload
+ */
+void
+olsrd_telnet_exit(void)
+{
+  int i;
+  for(i=0; i<MAX_CLIENTS; ++i) {
+    if(clients[i].fd != -1) {
+      remove_olsr_socket(clients[i].fd, &telnet_client_action, NULL);
+      close(clients[i].fd);
+    }
+    abuf_free(&(clients[i].out));
+    abuf_free(&(clients[i].in));
+  }
+
+  if (telnet_socket != -1) {
+    remove_olsr_socket(telnet_socket, &telnet_action, NULL);
+    close(telnet_socket);
+  }
+}
+
+
+
+static void
+telnet_action(int fd, void *data __attribute__ ((unused)), unsigned int flags __attribute__ ((unused)))
+{
+  union olsr_sockaddr pin;
+
+  char addr[INET6_ADDRSTRLEN];
+  int client_fd, c;
+
+  socklen_t addrlen = sizeof(pin);
+
+  if ((client_fd = accept(fd, &pin.in, &addrlen)) == -1) {
+#ifndef NODEBUG
+    olsr_printf(1, "(TELNET) accept()=%s\n", strerror(errno));
+#endif /* NODEBUG */
+    return;
+  }
+
+  if (olsr_cnf->ip_version == AF_INET) {
+    if (inet_ntop(olsr_cnf->ip_version, &pin.in4.sin_addr, addr, INET6_ADDRSTRLEN) == NULL)
+      addr[0] = '\0';
+  } else {
+    if (inet_ntop(olsr_cnf->ip_version, &pin.in6.sin6_addr, addr, INET6_ADDRSTRLEN) == NULL)
+      addr[0] = '\0';
+  }
+
+  c = telnet_client_add(client_fd);
+  if(c < MAX_CLIENTS) {
+#ifndef NODEBUG
+      olsr_printf(2, "(TELNET) Connect from %s (client: %d)\n", addr, c);
+#endif /* NODEBUG */
+  } else {
+    close(client_fd);
+#ifndef NODEBUG
+    olsr_printf(1, "(TELNET) Connect from %s (maximum number of clients reached!)\n", addr);
+#endif /* NODEBUG */
+  }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+static void
+telnet_client_prompt(int c)
+{
+  telnet_client_printf(c, "> ");
+}
+
+static int
+telnet_client_add(int fd)
+{
+  int c;
+  for(c=0; c < MAX_CLIENTS; c++) {
+    if(clients[c].fd == -1) {
+      clients[c].fd = fd;
+      clients[c].continue_function = NULL;
+      abuf_pull(&(clients[c].out), clients[c].out.len);
+      abuf_pull(&(clients[c].in), clients[c].in.len);
+      add_olsr_socket(fd, &telnet_client_action, NULL, NULL, SP_PR_READ);
+      telnet_client_prompt(c);
+      break;
+    }
+  }
+  return c;
+}
+
 void telnet_client_quit(int c)
 {
   if(c < 0 || c >= MAX_CLIENTS)
@@ -336,69 +394,6 @@ telnet_cmd_function telnet_client_get_continue_function(int c)
     return NULL;
 
   return clients[c].continue_function;
-}
-
-
-static void
-telnet_action(int fd, void *data __attribute__ ((unused)), unsigned int flags __attribute__ ((unused)))
-{
-  union olsr_sockaddr pin;
-
-  char addr[INET6_ADDRSTRLEN];
-  int client_fd, c;
-
-  socklen_t addrlen = sizeof(pin);
-
-  if ((client_fd = accept(fd, &pin.in, &addrlen)) == -1) {
-#ifndef NODEBUG
-    olsr_printf(1, "(TELNET) accept()=%s\n", strerror(errno));
-#endif /* NODEBUG */
-    return;
-  }
-
-  if (olsr_cnf->ip_version == AF_INET) {
-    if (inet_ntop(olsr_cnf->ip_version, &pin.in4.sin_addr, addr, INET6_ADDRSTRLEN) == NULL)
-      addr[0] = '\0';
-  } else {
-    if (inet_ntop(olsr_cnf->ip_version, &pin.in6.sin6_addr, addr, INET6_ADDRSTRLEN) == NULL)
-      addr[0] = '\0';
-  }
-
-  c = telnet_client_add(client_fd);
-  if(c < MAX_CLIENTS) {
-#ifndef NODEBUG
-      olsr_printf(2, "(TELNET) Connect from %s (client: %d)\n", addr, c);
-#endif /* NODEBUG */
-  } else {
-    close(client_fd);
-#ifndef NODEBUG
-    olsr_printf(1, "(TELNET) Connect from %s (maximum number of clients reached!)\n", addr);
-#endif /* NODEBUG */
-  }
-}
-
-static void
-telnet_client_prompt(int c)
-{
-  telnet_client_printf(c, "> ");
-}
-
-static int
-telnet_client_add(int fd)
-{
-  int c;
-  for(c=0; c < MAX_CLIENTS; c++) {
-    if(clients[c].fd == -1) {
-      clients[c].fd = fd;
-      clients[c].continue_function = NULL;
-      abuf_pull(&(clients[c].out), clients[c].out.len);
-      abuf_pull(&(clients[c].in), clients[c].in.len);
-      add_olsr_socket(fd, &telnet_client_action, NULL, NULL, SP_PR_READ);
-      telnet_client_prompt(c);
-      break;
-    }
-  }
-  return c;
 }
 
 static void

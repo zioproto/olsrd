@@ -23,7 +23,7 @@ If you want to add additional commands you have to write something like
 this:
 
 <snip>
-#include "olsrd_telnet.h"
+#include "lib/telnet/src/olsrd_telnet.h"
 #include "lib/telnet/src/cmd_handler.h"
 
 DEFINE_TELNET_CMD(cmd_mycmd_struct,

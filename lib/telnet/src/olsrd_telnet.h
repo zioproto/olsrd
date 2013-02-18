@@ -49,10 +49,8 @@
 #define _OLSRD_TELNET
 
 #include <stdarg.h>
-
 #include "olsr_types.h"
-#include "olsrd_plugin.h"
-#include "plugin_util.h"
+#include "cmd_handler.h"
 
 struct string_list {
   char* string;
@@ -63,12 +61,8 @@ extern int telnet_port;
 extern struct string_list* telnet_enabled_commands;
 extern bool telnet_allow_foreign;
 
-int olsrd_plugin_interface_version(void);
-int olsrd_plugin_init(void);
-void olsr_plugin_exit(void);
-void olsrd_get_plugin_parameters(const struct olsrd_plugin_parameters **params, int *size);
-
-#include "cmd_handler.h"
+int olsrd_telnet_init(void);
+void olsrd_telnet_exit(void);
 
 void telnet_client_printf(int, const char*, ...) __attribute__ ((format (printf, 2, 3)));
 void telnet_client_set_continue_function(int, telnet_cmd_function);
