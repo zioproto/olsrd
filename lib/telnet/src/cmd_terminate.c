@@ -88,7 +88,7 @@ static struct telnet_cmd_functor handle_inquiry_functor = { &handle_inquiry };
 static telnet_cmd_function handle_terminate(int c, int argc, char* argv[] __attribute__ ((unused)))
 {
   if(argc != 1) {
-    telnet_print_usage(c, &cmd_terminate_struct);
+    telnet_print_usage(c, cmd_terminate_struct);
     return NULL;
   }
   telnet_client_printf(c, "really want to quit olsr daemon (type uppercase YES to confirm)? ");

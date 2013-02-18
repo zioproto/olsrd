@@ -111,7 +111,7 @@ static telnet_cmd_function handle_hna(int c, int argc, char* argv[])
   }
 
   if(argc != 3) {
-    telnet_print_usage(c, &cmd_hna_struct);
+    telnet_print_usage(c, cmd_hna_struct);
     return NULL;
   }
 
@@ -127,6 +127,6 @@ static telnet_cmd_function handle_hna(int c, int argc, char* argv[])
     return cmd_hna_del(c, &hna_entry);
   }
 
-  telnet_print_usage(c, &cmd_hna_struct);
+  telnet_print_usage(c, cmd_hna_struct);
   return NULL;
 }

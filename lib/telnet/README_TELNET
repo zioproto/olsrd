@@ -23,8 +23,7 @@ If you want to add additional commands you have to write something like
 this:
 
 <snip>
-#include "lib/telnet/src/telnet_client.h"
-#include "lib/telnet/src/cmd_handler.h"
+#include "../../telnet/include/telnet_cmd.h"
 
 DEFINE_TELNET_CMD(cmd_mycmd_struct,
                   "mycmd", handle_mycmd,
@@ -35,7 +34,7 @@ DEFINE_TELNET_CMD(cmd_mycmd_struct,
 static telnet_cmd_function handle_mycmd(int c, int argc, char* argv[])
 {
   if(argc != 1) {
-    telnet_print_usage(c, &cmd_mycmd_struct);
+    telnet_print_usage(c, cmd_mycmd_struct);
     return NULL;
   }
 
@@ -45,7 +44,7 @@ static telnet_cmd_function handle_mycmd(int c, int argc, char* argv[])
     return NULL;
   }
 
-  telnet_print_usage(c, &cmd_mycmd_struct);
+  telnet_print_usage(c, cmd_mycmd_struct);
   return NULL;
 }
 </snip>

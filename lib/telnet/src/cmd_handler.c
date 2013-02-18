@@ -134,11 +134,6 @@ cmd_t* telnet_cmd_remove(const char* command)
   return NULL;
 }
 
-inline void telnet_print_usage(int c, cmd_t* cmd)
-{
-  telnet_client_printf(c, "usage:\n\r%s\n\r", cmd->usage_text);
-}
-
 int telnet_cmd_dispatch(int c, int argc, char* argv[])
 {
   telnet_cmd_function cmd_f;
@@ -170,7 +165,7 @@ int telnet_cmd_dispatch(int c, int argc, char* argv[])
 static telnet_cmd_function handle_quit(int c, int argc, char* argv[] __attribute__ ((unused)))
 {
   if(argc != 1) {
-    telnet_print_usage(c, &cmd_quit_struct);
+    telnet_print_usage(c, cmd_quit_struct);
     return NULL;
   }
 
@@ -191,12 +186,12 @@ static telnet_cmd_function handle_help(int c, int argc, char* argv[])
     tmp_cmd = telnet_cmd_find(argv[1]);
     if(tmp_cmd) {
       telnet_client_printf(c, "%s: %s\n\r\n\r", tmp_cmd->command, tmp_cmd->short_help);
-      telnet_print_usage(c, tmp_cmd);
+      telnet_print_usage(c, (*tmp_cmd));
     } else
       telnet_client_printf(c, "command '%s' unknown\n\r", argv[1]);
     return NULL;
   default:
-    telnet_print_usage(c, &cmd_help_struct);
+    telnet_print_usage(c, cmd_help_struct);
     return NULL;
   }
 }

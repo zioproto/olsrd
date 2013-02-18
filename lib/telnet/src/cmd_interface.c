@@ -184,7 +184,7 @@ static telnet_cmd_function handle_interface(int c, int argc, char* argv[])
   }
 
   if(argc != 3) {
-    telnet_print_usage(c, &cmd_interface_struct);
+    telnet_print_usage(c, cmd_interface_struct);
     return NULL;
   }
 
@@ -198,6 +198,6 @@ static telnet_cmd_function handle_interface(int c, int argc, char* argv[])
     return cmd_interface_status(c, argv[2]);
   }
 
-  telnet_print_usage(c, &cmd_interface_struct);
+  telnet_print_usage(c, cmd_interface_struct);
   return NULL;
 }
