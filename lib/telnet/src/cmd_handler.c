@@ -52,9 +52,12 @@
 
 #include <string.h>
 
+#include "olsrd_telnet.h"
 #include "telnet_client.h"
 #include "cmd_handler.h"
 
+
+#include "olsr.h"
 
 static telnet_cmd_function handle_help(int, int, char**);
 struct telnet_cmd_functor cmd_help_functor = { &handle_help };
@@ -74,7 +77,7 @@ cmd_t cmd_quit_struct = {
   &cmd_help_struct
 };
 
-cmd_t* dispatch_table = &cmd_quit_struct;
+static cmd_t* local_dispatch_table = &cmd_quit_struct;
 
 static inline cmd_t* telnet_cmd_find(const char* command)
 {
@@ -83,7 +86,7 @@ static inline cmd_t* telnet_cmd_find(const char* command)
   if(!command)
     return NULL;
 
-  for(tmp_cmd = dispatch_table; tmp_cmd; tmp_cmd = tmp_cmd->next)
+  for(tmp_cmd = local_dispatch_table; tmp_cmd; tmp_cmd = tmp_cmd->next)
     if(!strcmp(tmp_cmd->command, command))
       return tmp_cmd;
 
@@ -101,8 +104,8 @@ int telnet_cmd_add(cmd_t* cmd)
   if(tmp_cmd)
     return 0;
 
-  cmd->next = dispatch_table;
-  dispatch_table = cmd;
+  cmd->next = local_dispatch_table;
+  local_dispatch_table = cmd;
 
   return 1;
 }
@@ -111,17 +114,17 @@ cmd_t* telnet_cmd_remove(const char* command)
 {
   cmd_t* tmp_cmd;
 
-  if(!command || !dispatch_table ||
+  if(!command || !local_dispatch_table ||
      !strcmp(command, cmd_help_struct.command) ||
      !strcmp(command, cmd_quit_struct.command))
     return NULL;
 
-  if(!strcmp(dispatch_table->command, command)) {
-    cmd_t* removee = dispatch_table;
-    dispatch_table = dispatch_table->next;
+  if(!strcmp(local_dispatch_table->command, command)) {
+    cmd_t* removee = local_dispatch_table;
+    local_dispatch_table = local_dispatch_table->next;
     return removee;
   }
-  for(tmp_cmd = dispatch_table; tmp_cmd->next; tmp_cmd = tmp_cmd->next) {
+  for(tmp_cmd = local_dispatch_table; tmp_cmd->next; tmp_cmd = tmp_cmd->next) {
     if(!strcmp(tmp_cmd->next->command, command)) {
       cmd_t* removee = tmp_cmd->next;
       tmp_cmd->next = tmp_cmd->next->next;
@@ -155,6 +158,10 @@ int telnet_cmd_dispatch(int c, int argc, char* argv[])
     return 0;
   }
 
+  if(telnet_allow_foreign) {
+        // TODO: lookup foreign command table
+  }
+
   telnet_client_printf(c, "command '%s' unknown - enter help for a list of commands\n\r", argv[0]);
   return -1;
 }
@@ -178,7 +185,7 @@ static telnet_cmd_function handle_help(int c, int argc, char* argv[])
 
   switch(argc) {
   case 1:
-    for(tmp_cmd = dispatch_table; tmp_cmd; tmp_cmd = tmp_cmd->next)
+    for(tmp_cmd = local_dispatch_table; tmp_cmd; tmp_cmd = tmp_cmd->next)
       telnet_client_printf(c, " %-16s %s\n\r", tmp_cmd->command, tmp_cmd->short_help);
     return NULL;
   case 2:
