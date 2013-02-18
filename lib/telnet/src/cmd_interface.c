@@ -51,7 +51,6 @@
  */
 
 #include <string.h>
-
 #include <unistd.h>
 
 #include "olsr.h"
@@ -60,7 +59,7 @@
 #include "interfaces.h"
 
 #include "telnet_client.h"
-#include "cmd_handler.h"
+#include "telnet_cmd.h"
 #include "cmd_interface.h"
 
 DEFINE_TELNET_CMD(cmd_interface_struct,

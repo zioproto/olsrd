@@ -45,24 +45,12 @@
  * Dynamic linked library for the olsr.org olsr daemon
  */
 
-#ifndef _OLSRD_TELNET_CLIENT
-#define _OLSRD_TELNET_CLIENT
+#ifndef _OLSRD_TELNET_CMD
+#define _OLSRD_TELNET_CMD
 
-#include <stdarg.h>
-#include "telnet_cmd.h"
+#include "telnet_cmd_common.h"
 
-/* needed by olsrd_telnet.c */
-int telnet_client_init(void);
-void telnet_client_cleanup(void);
-int telnet_client_add(int);
-
-/* needed by command handler */
-void telnet_client_set_continue_function(int, telnet_cmd_function);
-telnet_cmd_function telnet_client_get_continue_function(int);
 void telnet_client_quit(int);
 void telnet_client_printf(int, const char*, ...) __attribute__ ((format (printf, 2, 3)));
 
-#endif /* _OLSRD_TELNET_CLIENT */
-
-
-
+#endif /* _OLSRD_TELNET_CMD */

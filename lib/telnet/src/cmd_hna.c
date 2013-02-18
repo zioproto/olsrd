@@ -52,13 +52,12 @@
 
 #include <string.h>
 
-#include "olsr.h"
 #include "olsr_types.h"
 #include "ipcalc.h"
 
-#include "telnet_client.h"
-#include "cmd_handler.h"
 #include "cmd_hna.h"
+#include "telnet_client.h"
+#include "telnet_cmd.h"
 
 DEFINE_TELNET_CMD(cmd_hna_struct,
                   "hna", handle_hna,

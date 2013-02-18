@@ -54,10 +54,9 @@
 
 #include "olsrd_telnet.h"
 #include "telnet_client.h"
+
+#include "telnet_cmd.h"
 #include "cmd_handler.h"
-
-
-#include "olsr.h"
 
 static telnet_cmd_function handle_help(int, int, char**);
 struct telnet_cmd_functor cmd_help_functor = { &handle_help };

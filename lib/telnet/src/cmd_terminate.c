@@ -54,9 +54,9 @@
 
 #include "olsr.h"
 
-#include "telnet_client.h"
-#include "cmd_handler.h"
 #include "cmd_terminate.h"
+#include "telnet_client.h"
+#include "telnet_cmd.h"
 
 DEFINE_TELNET_CMD(cmd_terminate_struct,
                   "terminate", handle_terminate,

@@ -45,24 +45,37 @@
  * Dynamic linked library for the olsr.org olsr daemon
  */
 
-#ifndef _OLSRD_TELNET_CLIENT
-#define _OLSRD_TELNET_CLIENT
+#ifndef _OLSRD_TELNET_CMD_COMMON
+#define _OLSRD_TELNET_CMD_COMMON
 
 #include <stdarg.h>
-#include "telnet_cmd.h"
 
-/* needed by olsrd_telnet.c */
-int telnet_client_init(void);
-void telnet_client_cleanup(void);
-int telnet_client_add(int);
+typedef struct telnet_cmd_functor* telnet_cmd_function;
+struct telnet_cmd_functor {
+  telnet_cmd_function (*f)(int, int, char**);
+};
 
-/* needed by command handler */
-void telnet_client_set_continue_function(int, telnet_cmd_function);
-telnet_cmd_function telnet_client_get_continue_function(int);
-void telnet_client_quit(int);
-void telnet_client_printf(int, const char*, ...) __attribute__ ((format (printf, 2, 3)));
+typedef struct telnet_cmd_struct {
+  const char* command;
+  telnet_cmd_function cmd_function;
+  const char* short_help;
+  const char* usage_text;
+  struct telnet_cmd_struct* next;
+} cmd_t;
 
-#endif /* _OLSRD_TELNET_CLIENT */
+#define STR_CONCAT(x, y) x ## y
+#define DEFINE_TELNET_CMD(CMD_STRUCT, CMD_CODE, HANDLE_FUNCTION, SHORT_HELP, USAGE)     \
+static telnet_cmd_function HANDLE_FUNCTION(int, int, char**);                           \
+struct telnet_cmd_functor STR_CONCAT(HANDLE_FUNCTION, _functor) = { &HANDLE_FUNCTION }; \
+cmd_t CMD_STRUCT = {                                                                    \
+  CMD_CODE, &STR_CONCAT(HANDLE_FUNCTION, _functor),                                     \
+  SHORT_HELP,                                                                           \
+  USAGE,                                                                                \
+  NULL                                                                                  \
+}
 
+int telnet_cmd_add(cmd_t*);
+cmd_t* telnet_cmd_remove(const char*);
+void telnet_print_usage(int, cmd_t*);
 
-
+#endif /* _OLSRD_TELNET_CMD_COMMON */
