@@ -140,7 +140,7 @@ static telnet_cmd_function cmd_interface_del(int c, const char* name)
       }
     }
   }
-/* also removing interface from global configuration */
+
   telnet_client_printf(c, "interface %s removed\n\r", name);
   return NULL;
 }
