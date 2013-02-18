@@ -119,6 +119,7 @@ typedef struct {
 static client_t clients[MAX_CLIENTS];
 
 
+
 /**
  *Do initialization here
  *
@@ -166,7 +167,7 @@ olsr_plugin_exit(void)
 #define STR_CONCAT3(x, y, z) x ## y ## z
 #define CHECK_ENABLE_COMMAND(COMMAND, CMD)                                     \
   do {                                                                         \
-    if(!strcmp(COMMAND, STR_CONCAT3(cmd_, CMD, _get_command()) )) {   \
+    if(!strcmp(COMMAND, STR_CONCAT3(cmd_, CMD, _get_command()) )) {            \
       if(! STR_CONCAT3(cmd_, CMD, _init()) )                                   \
         olsr_printf(0, "(TELNET) failed: enabling command '%s'\n", COMMAND);   \
       else                                                                     \
