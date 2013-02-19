@@ -9,7 +9,7 @@ PLUGIN USAGE
 ============
 
 To use the plugin one just has to enable the plugin (see PLUGIN CONFIGURATION)
-and connect to it using telnet, nc or the like. There are several built-in
+and connect to it using telnet, nc or the like. There are two built-in
 functions:
   quit       - terminates the client connection
   help       - print usage strings and lists all available commands
@@ -19,8 +19,8 @@ interface lists and a command to terminate the whole olsr daemon. These
 commands can be globally disabled (see PLUGIN CONFIGURATION). The built-in
 commands are always enabled.
 
-If you want to add additional commands you have to write something like
-this:
+If you want to add additional commands (from another plugin) you have to
+write something like this:
 
 <snip>
 #include "../../telnet/include/telnet_cmd.h"
@@ -55,10 +55,18 @@ You can then enable your command by calling:
 telnet_cmd_add(&cmd_mycmd_struct);
 </snip>
 
-If your command needs additional input of the user your handle function may return 
-a pointer to a continue function which will be called next time the user enters 
-something, bypassing the normal command lookup. This may be done repeatedly until
-the command is completed. The terminate command is a nice example for such a inquiry.
+your handle function may use the following functions:
+ - telnet_print_usage(c, cmd_t)        print the usage string for the command
+ - telnet_client_printf(c, fmt, ...)   print something to the connected client
+ - telnet_client_quit(c)               terminate the client connection
+
+To keep the interface header-only all these functions as well as `telnet_cmd_add`
+are implemented as macros.
+If your command needs additional input from the user, your handle function may
+return a pointer to a continue function which will be called next time the user
+enters something, bypassing the normal command lookup. This may be done
+repeatedly until the command is completed. The `terminate` command is a nice
+example for such a inquiry.
 
 
 PLUGIN CONFIGURATION
@@ -67,7 +75,7 @@ PLUGIN CONFIGURATION
 LoadPlugin "olsrd_telnet.so.0.1"
 {
     # the default port is 2023 but you can change it like this:
-    #PlParam     "port"   "1234"
+    #PlParam      "port"   "1234"
 
     # the address to bind the socket to, if omitted the plugin
     # will bind to the wildcard adress
@@ -75,6 +83,8 @@ LoadPlugin "olsrd_telnet.so.0.1"
 
     # whitelist for commands, one line per command, if omitted all commands
     # are enabled
+    # mind that the built-in functions (quit and help) are always enabled
+    # and that depending on 'allowforeign' other plugins may add commands
     #PlParam      "enable" "hna"
     #PlParam      "enable" "interface"
     #PlParam      "enable" "terminate"
@@ -88,6 +98,6 @@ LoadPlugin "olsrd_telnet.so.0.1"
 Example Usage
 =============
 
-The tools directory contains some scripts which use `expect` to add/remove
+The tools directory contains some scripts which use `empty` to add/remove
 HNA entries. This is particulary useful if you want to update the HNA list
-whithout the need to restart the whole daemon.
+from shell scripts whithout the need to restart the whole daemon.
