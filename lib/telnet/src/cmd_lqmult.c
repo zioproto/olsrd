@@ -65,9 +65,9 @@
 DEFINE_TELNET_CMD(cmd_lqmult_struct,
                   "lqmult", handle_lqmult,
                   "add/remove/change or show link quality multipliers",
-                  " lqmult (add|update) (<interface>|all) <neigbor> <value>\n\r"
-                  " lqmult del (<interface>|all) <neigbor>\n\r"
-                  " lqmult get (<interface>|all) <neigbor>\n\r"
+                  " lqmult (add|update) (<interface>|*) <neigbor> <value>\n\r"
+                  " lqmult del (<interface>|*) <neigbor>\n\r"
+                  " lqmult get (<interface>|*) <neigbor>\n\r"
                   " lqmult flush [<interface>]\n\r"
                   " lqmult list [<interface>]");
 
@@ -96,31 +96,97 @@ const char* cmd_lqmult_get_command(void)
   /*   ifs->cnf->lq_mult=mult_temp; */
   /* } */
 
-static telnet_cmd_function cmd_lqmult_add(struct olsr_if *ifs, int c)
+#define cmd_lqmult_foreach_interface(FUNC, ARGS...)                 \
+  do {                                                              \
+    struct olsr_if *ifs;                                            \
+    for (ifs = olsr_cnf->interfaces; ifs != NULL; ifs = ifs->next)  \
+      FUNC (ifs, ARGS);                                             \
+  } while(false)
+
+static struct olsr_if* cmd_lqmult_get_ifs(int c, const char* if_name)
 {
+  struct olsr_if *ifs = olsrif_ifwithname(if_name);
+  if(!ifs) {
+    telnet_client_printf(c, "FAILED: no such interface '%s'\n\r", if_name);
+    return NULL;
+  }
+  return ifs;
+}
+
+/* ****** ADD ****** */
+static void cmd_lqmult_add_if(struct olsr_if *ifs, int c)
+{
+  if(!ifs)
+    return;
+
   telnet_client_printf(c, "adding lqmult to interface '%s'\n\r", ifs->name);
+}
+
+static telnet_cmd_function cmd_lqmult_add(int c, const char* if_name)
+{
+  if(!if_name)
+    cmd_lqmult_foreach_interface(cmd_lqmult_add_if, c);
+  else
+    cmd_lqmult_add_if(cmd_lqmult_get_ifs(c, if_name), c);
   return NULL;
 }
 
-static telnet_cmd_function cmd_lqmult_update(struct olsr_if *ifs, int c)
+/* ****** UPDATE ****** */
+static void cmd_lqmult_update_if(struct olsr_if *ifs, int c)
 {
+  if(!ifs)
+    return;
+
   telnet_client_printf(c, "updating lqmult on interface '%s'\n\r", ifs->name);
+}
+
+static telnet_cmd_function cmd_lqmult_update(int c, const char* if_name)
+{
+  if(!if_name)
+    cmd_lqmult_foreach_interface(cmd_lqmult_update_if, c);
+  else
+    cmd_lqmult_update_if(cmd_lqmult_get_ifs(c, if_name), c);
   return NULL;
 }
 
-static telnet_cmd_function cmd_lqmult_del(struct olsr_if *ifs, int c)
+/* ****** DEL ****** */
+static void cmd_lqmult_del_if(struct olsr_if *ifs, int c)
 {
+  if(!ifs)
+    return;
+
   telnet_client_printf(c, "removing lqmult on interface '%s'\n\r", ifs->name);
-  return NULL;
 }
 
-static telnet_cmd_function cmd_lqmult_get(const struct olsr_if *ifs, int c)
+static telnet_cmd_function cmd_lqmult_del(int c, const char* if_name)
 {
-  telnet_client_printf(c, "retreiving lqmult on interface '%s'\n\r", ifs->name);
+  if(!if_name)
+    cmd_lqmult_foreach_interface(cmd_lqmult_del_if, c);
+  else
+    cmd_lqmult_del_if(cmd_lqmult_get_ifs(c, if_name), c);
   return NULL;
 }
 
-static void cmd_lqmult_list(const struct olsr_if *ifs, int c)
+/* ****** GET ****** */
+static void cmd_lqmult_get_if(const struct olsr_if *ifs, int c)
+{
+  if(!ifs)
+    return;
+
+  telnet_client_printf(c, "retreiving lqmult on interface '%s'\n\r", ifs->name);
+}
+
+static telnet_cmd_function cmd_lqmult_get(const int c, const char* if_name)
+{
+  if(!if_name)
+    cmd_lqmult_foreach_interface(cmd_lqmult_get_if, c);
+  else
+    cmd_lqmult_get_if(cmd_lqmult_get_ifs(c, if_name), c);
+  return NULL;
+}
+
+/* ****** LIST ****** */
+static void cmd_lqmult_list_if(const struct olsr_if *ifs, int c)
 {
   struct olsr_lq_mult *mult;
 
@@ -135,82 +201,67 @@ static void cmd_lqmult_list(const struct olsr_if *ifs, int c)
   }
 }
 
-static void cmd_lqmult_flush(const struct olsr_if *ifs, int c)
+static telnet_cmd_function cmd_lqmult_list(int c, const char* if_name)
+{
+  if(!if_name)
+    cmd_lqmult_foreach_interface(cmd_lqmult_list_if, c);
+  else
+    cmd_lqmult_list_if(cmd_lqmult_get_ifs(c, if_name), c);
+  return NULL;
+}
+
+/* ****** FLUSH ****** */
+static void cmd_lqmult_flush_if(const struct olsr_if *ifs, int c)
 {
   if(!ifs)
     return;
 
-  do {
+  while(ifs->cnf->lq_mult) {
     struct olsr_lq_mult *mult_temp = ifs->cnf->lq_mult->next;
     free(ifs->cnf->lq_mult);
     ifs->cnf->lq_mult = mult_temp;
-  } while(ifs->cnf->lq_mult);
+  }
   telnet_client_printf(c, "removed all link quality multipliers for interface '%s'\n\r", ifs->name);
 }
 
-#define cmd_lqmult_foreach_interface(FUNC, ARGS...)                 \
-  do {                                                              \
-    const struct olsr_if *ifs;                                      \
-    for (ifs = olsr_cnf->interfaces; ifs != NULL; ifs = ifs->next)  \
-      FUNC (ifs, ARGS);                                             \
-  } while(false)                                                    \
-
-
-static struct olsr_if* cmd_lqmult_get_ifs(int c, const char* if_name)
+static telnet_cmd_function cmd_lqmult_flush(int c, const char* if_name)
 {
-  struct olsr_if *ifs = olsrif_ifwithname(if_name);
-  if(!ifs) {
-    telnet_client_printf(c, "FAILED: no such interface '%s'\n\r", if_name);
-    return NULL;
-  }
-  return ifs;
+  if(!if_name)
+    cmd_lqmult_foreach_interface(cmd_lqmult_flush_if, c);
+  else
+    cmd_lqmult_flush_if(cmd_lqmult_get_ifs(c, if_name), c);
+  return NULL;
 }
+
+/* ****** main ****** */
 
 static telnet_cmd_function handle_lqmult(int c, int argc, char* argv[])
 {
   if(argc == 2 || argc == 3) {
 
-    if(!strcmp(argv[1], "list")) {
-      if(argc == 2)
-        cmd_lqmult_foreach_interface(cmd_lqmult_list, c);
-      else
-        cmd_lqmult_list(cmd_lqmult_get_ifs(c, argv[2]), c);
-      return NULL;
-    }
+    if(!strcmp(argv[1], "list"))
+      return cmd_lqmult_list(c, argc == 2 ? NULL : argv[2]);
 
-    if(!strcmp(argv[1], "flush")) {
-      if(argc == 2)
-        cmd_lqmult_foreach_interface(cmd_lqmult_flush, c);
-      else
-        cmd_lqmult_flush(cmd_lqmult_get_ifs(c, argv[2]), c);
-      return NULL;
-    }
+    if(!strcmp(argv[1], "flush"))
+      return cmd_lqmult_flush(c, argc == 2 ? NULL : argv[2]);
   }
 
   if(argc > 3) {
-    struct olsr_if *ifs = cmd_lqmult_get_ifs(c, argv[2]);
-    if(!ifs)
-      return NULL;
-
+    const char* if_name = !(strcmp(argv[2], "*")) ? NULL : argv[2];
         // TODO: parse neigbor from argv[3]
 
-    if(!strcmp(argv[1], "get")) {
-      return cmd_lqmult_get(ifs, c);
-    }
-    else if(!strcmp(argv[1], "del")) {
-      return cmd_lqmult_del(ifs, c);
-    }
+    if(!strcmp(argv[1], "get"))
+      return cmd_lqmult_get(c, if_name);
+    else if(!strcmp(argv[1], "del"))
+      return cmd_lqmult_del(c, if_name);
 
     if(argc == 5) {
-
           // TODO: parse value from argv[4]
 
-      if(!strcmp(argv[1], "add")) {
-        return cmd_lqmult_add(ifs, c);
-      }
-      else if(!strcmp(argv[1], "update")) {
-        return cmd_lqmult_update(ifs, c);
-      }
+      if(!strcmp(argv[1], "add"))
+        return cmd_lqmult_add(c, if_name);
+      else if(!strcmp(argv[1], "update"))
+        return cmd_lqmult_update(c, if_name);
     }
   }
 
