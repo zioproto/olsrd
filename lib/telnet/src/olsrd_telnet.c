@@ -195,8 +195,8 @@ olsrd_telnet_init(void)
 
 #ifdef TELNET_FOREIGN_CMDS
   if(telnet_allow_foreign) {
-    olsr_cnf->telnet_foreign_cmds.client_quit = &telnet_client_quit;
-    olsr_cnf->telnet_foreign_cmds.client_printf = &telnet_client_printf;
+    olsr_cnf->telnet_foreign_cmds.client_quit = telnet_client_quit;
+    olsr_cnf->telnet_foreign_cmds.client_printf = telnet_client_printf;
   }
 #endif /* TELNET_FOREIGN_CMDS */
   telnet_enable_commands();

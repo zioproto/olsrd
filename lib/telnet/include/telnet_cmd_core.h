@@ -68,7 +68,7 @@ typedef struct telnet_cmd_struct {
 typedef struct {
   cmd_t* table;
   void (*client_quit)(int);
-  void (*client_printf)(int, const char*, ...);
+  void (*client_printf)(int, const char*, ...) __attribute__ ((format (printf, 2, 3)));
 } telnet_foreign_cmd_t;
 
 #endif /* _OLSRD_TELNET_CMD_COMMON */
