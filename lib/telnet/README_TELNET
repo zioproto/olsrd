@@ -49,12 +49,10 @@ static telnet_cmd_function handle_mycmd(int c, int argc, char* argv[])
 }
 </snip>
 
-You can then enable/disable your command by calling:
+You can then enable your command by calling:
 
 <snip>
 telnet_cmd_add(&cmd_mycmd_struct);
-...
-telnet_cmd_remove("mycmd");
 </snip>
 
 If you want to dynamically allocate your command struct you may do so,
