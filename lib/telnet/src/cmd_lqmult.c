@@ -57,6 +57,7 @@
 #include "olsr_types.h"
 #include "ipcalc.h"
 #include "interfaces.h"
+#include "link_set.h"
 
 #include "telnet_client.h"
 #include "telnet_cmd.h"
@@ -114,74 +115,82 @@ static struct olsr_if* cmd_lqmult_get_ifs(int c, const char* if_name)
 }
 
 /* ****** ADD ****** */
-static void cmd_lqmult_add_if(struct olsr_if *ifs, int c)
+static void cmd_lqmult_add_if(struct olsr_if *ifs, int c, const union olsr_ip_addr* neighbor, uint32_t value)
 {
+  struct ipaddr_str addrbuf;
+
   if(!ifs)
     return;
 
-  telnet_client_printf(c, "adding lqmult to interface '%s'\n\r", ifs->name);
+  telnet_client_printf(c, "adding lqmult %s=%d to interface '%s'\n\r", olsr_ip_to_string(&addrbuf, neighbor), value, ifs->name);
 }
 
-static telnet_cmd_function cmd_lqmult_add(int c, const char* if_name)
+static telnet_cmd_function cmd_lqmult_add(int c, const char* if_name, const union olsr_ip_addr* neighbor, uint32_t value)
 {
   if(!if_name)
-    cmd_lqmult_foreach_interface(cmd_lqmult_add_if, c);
+    cmd_lqmult_foreach_interface(cmd_lqmult_add_if, c, neighbor, value);
   else
-    cmd_lqmult_add_if(cmd_lqmult_get_ifs(c, if_name), c);
+    cmd_lqmult_add_if(cmd_lqmult_get_ifs(c, if_name), c, neighbor, value);
   return NULL;
 }
 
 /* ****** UPDATE ****** */
-static void cmd_lqmult_update_if(struct olsr_if *ifs, int c)
+static void cmd_lqmult_update_if(struct olsr_if *ifs, int c, const union olsr_ip_addr* neighbor, uint32_t value)
 {
+  struct ipaddr_str addrbuf;
+
   if(!ifs)
     return;
 
-  telnet_client_printf(c, "updating lqmult on interface '%s'\n\r", ifs->name);
+  telnet_client_printf(c, "updating lqmult for %s on interface '%s' to %d\n\r", olsr_ip_to_string(&addrbuf, neighbor), ifs->name, value);
 }
 
-static telnet_cmd_function cmd_lqmult_update(int c, const char* if_name)
+static telnet_cmd_function cmd_lqmult_update(int c, const char* if_name, const union olsr_ip_addr* neighbor, uint32_t value)
 {
   if(!if_name)
-    cmd_lqmult_foreach_interface(cmd_lqmult_update_if, c);
+    cmd_lqmult_foreach_interface(cmd_lqmult_update_if, c, neighbor, value);
   else
-    cmd_lqmult_update_if(cmd_lqmult_get_ifs(c, if_name), c);
+    cmd_lqmult_update_if(cmd_lqmult_get_ifs(c, if_name), c, neighbor, value);
   return NULL;
 }
 
 /* ****** DEL ****** */
-static void cmd_lqmult_del_if(struct olsr_if *ifs, int c)
+static void cmd_lqmult_del_if(struct olsr_if *ifs, int c, const union olsr_ip_addr* neighbor)
 {
+  struct ipaddr_str addrbuf;
+
   if(!ifs)
     return;
 
-  telnet_client_printf(c, "removing lqmult on interface '%s'\n\r", ifs->name);
+  telnet_client_printf(c, "removing lqmult for %s on interface '%s'\n\r", olsr_ip_to_string(&addrbuf, neighbor), ifs->name);
 }
 
-static telnet_cmd_function cmd_lqmult_del(int c, const char* if_name)
+static telnet_cmd_function cmd_lqmult_del(int c, const char* if_name, const union olsr_ip_addr* neighbor)
 {
   if(!if_name)
-    cmd_lqmult_foreach_interface(cmd_lqmult_del_if, c);
+    cmd_lqmult_foreach_interface(cmd_lqmult_del_if, c, neighbor);
   else
-    cmd_lqmult_del_if(cmd_lqmult_get_ifs(c, if_name), c);
+    cmd_lqmult_del_if(cmd_lqmult_get_ifs(c, if_name), c, neighbor);
   return NULL;
 }
 
 /* ****** GET ****** */
-static void cmd_lqmult_get_if(const struct olsr_if *ifs, int c)
+static void cmd_lqmult_get_if(const struct olsr_if *ifs, int c, const union olsr_ip_addr* neighbor)
 {
+  struct ipaddr_str addrbuf;
+
   if(!ifs)
     return;
 
-  telnet_client_printf(c, "retreiving lqmult on interface '%s'\n\r", ifs->name);
+  telnet_client_printf(c, "retreiving lqmult for %s on interface '%s'\n\r", olsr_ip_to_string(&addrbuf, neighbor), ifs->name);
 }
 
-static telnet_cmd_function cmd_lqmult_get(const int c, const char* if_name)
+static telnet_cmd_function cmd_lqmult_get(const int c, const char* if_name, const union olsr_ip_addr* neighbor)
 {
   if(!if_name)
-    cmd_lqmult_foreach_interface(cmd_lqmult_get_if, c);
+    cmd_lqmult_foreach_interface(cmd_lqmult_get_if, c, neighbor);
   else
-    cmd_lqmult_get_if(cmd_lqmult_get_ifs(c, if_name), c);
+    cmd_lqmult_get_if(cmd_lqmult_get_ifs(c, if_name), c, neighbor);
   return NULL;
 }
 
@@ -197,7 +206,7 @@ static void cmd_lqmult_list_if(const struct olsr_if *ifs, int c)
   for(mult = ifs->cnf->lq_mult; mult; mult=mult->next) {
     struct ipaddr_str addrbuf;
     const char* n = (ipequal(&(mult->addr), &olsr_ip_zero)) ? "default" : olsr_ip_to_string(&addrbuf, &(mult->addr));
-    telnet_client_printf(c, "  %s: %0.2f\n\r", n, (double)(mult->value) / (double)65536.0);
+    telnet_client_printf(c, "  %s: %0.2f\n\r", n, (double)(mult->value) / (double)LINK_LOSS_MULTIPLIER);
   }
 }
 
@@ -248,20 +257,32 @@ static telnet_cmd_function handle_lqmult(int c, int argc, char* argv[])
 
   if(argc > 3) {
     const char* if_name = !(strcmp(argv[2], "*")) ? NULL : argv[2];
-        // TODO: parse neigbor from argv[3]
+    const union olsr_ip_addr* neighbor = !(strcmp(argv[3] , "default")) ? &olsr_ip_zero : NULL;
+    union olsr_ip_addr addr;
+    if(!neighbor) {
+      if(inet_pton(olsr_cnf->ip_version, argv[3], &addr) <= 0) {
+        telnet_client_printf(c, "FAILED: '%s' is not a valid address'\n\r", argv[3]);
+        return NULL;
+      }
+      neighbor = &addr;
+    }
 
     if(!strcmp(argv[1], "get"))
-      return cmd_lqmult_get(c, if_name);
+      return cmd_lqmult_get(c, if_name, neighbor);
     else if(!strcmp(argv[1], "del"))
-      return cmd_lqmult_del(c, if_name);
+      return cmd_lqmult_del(c, if_name, neighbor);
 
     if(argc == 5) {
-          // TODO: parse value from argv[4]
-
+      char* end;
+      double value = strtod(argv[4], &end);
+      if((value == 0 && argv[4] == end) || value < 0.0 || value > 1.0) {
+        telnet_client_printf(c, "FAILED: '%s' not a valid multiplier (must be between 0.0 and 1.0)'\n\r", argv[4]);
+        return NULL;
+      }
       if(!strcmp(argv[1], "add"))
-        return cmd_lqmult_add(c, if_name);
+        return cmd_lqmult_add(c, if_name, neighbor, (uint32_t)(value * LINK_LOSS_MULTIPLIER));
       else if(!strcmp(argv[1], "update"))
-        return cmd_lqmult_update(c, if_name);
+        return cmd_lqmult_update(c, if_name, neighbor, (uint32_t)(value * LINK_LOSS_MULTIPLIER));
     }
   }
 
