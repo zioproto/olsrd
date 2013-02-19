@@ -119,7 +119,7 @@ static inline double cmd_lqmult_value_as_double(uint32_t value)
   return (double)(value) / (double)LINK_LOSS_MULTIPLIER;
 }
 
-static struct olsr_lq_mult* cmd_lqmult_find_neighbor(struct olsr_if *ifs, const union olsr_ip_addr* neighbor)
+static struct olsr_lq_mult* cmd_lqmult_find_neighbor(const struct olsr_if *ifs, const union olsr_ip_addr* neighbor)
 {
   struct olsr_lq_mult* mult;
   for(mult = ifs->cnf->lq_mult; mult; mult = mult->next)
@@ -130,7 +130,7 @@ static struct olsr_lq_mult* cmd_lqmult_find_neighbor(struct olsr_if *ifs, const 
 }
 
 /* ****** ADD ****** */
-static void cmd_lqmult_add_if(struct olsr_if *ifs, int c, const union olsr_ip_addr* neighbor, double value)
+static void cmd_lqmult_add_if(const struct olsr_if *ifs, const int c, const union olsr_ip_addr* neighbor, double value)
 {
   struct ipaddr_str addrbuf;
   struct olsr_lq_mult* mult;
@@ -140,7 +140,7 @@ static void cmd_lqmult_add_if(struct olsr_if *ifs, int c, const union olsr_ip_ad
 
   mult = cmd_lqmult_find_neighbor(ifs, neighbor);
   if(mult) {
-    telnet_client_printf(c, "FAILED: %s already has a multiplier of %0.2f on interface '%s'\n\r", olsr_ip_to_string(&addrbuf, neighbor), 
+    telnet_client_printf(c, "FAILED: %s already has a multiplier of %0.2f on interface '%s'\n\r", olsr_ip_to_string(&addrbuf, neighbor),
                          cmd_lqmult_value_as_double(mult->value), ifs->name);
     return;
   }
@@ -153,7 +153,7 @@ static void cmd_lqmult_add_if(struct olsr_if *ifs, int c, const union olsr_ip_ad
   telnet_client_printf(c, "added multiplier %0.2f for %s to interface '%s'\n\r", value, olsr_ip_to_string(&addrbuf, neighbor), ifs->name);
 }
 
-static telnet_cmd_function cmd_lqmult_add(int c, const char* if_name, const union olsr_ip_addr* neighbor, double value)
+static telnet_cmd_function cmd_lqmult_add(const int c, const char* if_name, const union olsr_ip_addr* neighbor, double value)
 {
   if(!if_name)
     cmd_lqmult_foreach_interface(cmd_lqmult_add_if, c, neighbor, value);
@@ -163,7 +163,7 @@ static telnet_cmd_function cmd_lqmult_add(int c, const char* if_name, const unio
 }
 
 /* ****** UPDATE ****** */
-static void cmd_lqmult_update_if(struct olsr_if *ifs, int c, const union olsr_ip_addr* neighbor, double value)
+static void cmd_lqmult_update_if(const struct olsr_if *ifs, const int c, const union olsr_ip_addr* neighbor, double value)
 {
   struct ipaddr_str addrbuf;
   struct olsr_lq_mult* mult;
@@ -183,7 +183,7 @@ static void cmd_lqmult_update_if(struct olsr_if *ifs, int c, const union olsr_ip
   telnet_client_printf(c, "updated multiplier for %s on interface '%s' from %0.2f to %0.2f\n\r", olsr_ip_to_string(&addrbuf, neighbor), ifs->name, old_value, value);
 }
 
-static telnet_cmd_function cmd_lqmult_update(int c, const char* if_name, const union olsr_ip_addr* neighbor, double value)
+static telnet_cmd_function cmd_lqmult_update(const int c, const char* if_name, const union olsr_ip_addr* neighbor, double value)
 {
   if(!if_name)
     cmd_lqmult_foreach_interface(cmd_lqmult_update_if, c, neighbor, value);
@@ -193,17 +193,35 @@ static telnet_cmd_function cmd_lqmult_update(int c, const char* if_name, const u
 }
 
 /* ****** DEL ****** */
-static void cmd_lqmult_del_if(struct olsr_if *ifs, int c, const union olsr_ip_addr* neighbor)
+static void cmd_lqmult_del_if(const struct olsr_if *ifs, const int c, const union olsr_ip_addr* neighbor)
 {
   struct ipaddr_str addrbuf;
+  struct olsr_lq_mult* mult;
 
   if(!ifs)
     return;
 
+  mult = cmd_lqmult_find_neighbor(ifs, neighbor);
+  if(!mult) {
+    telnet_client_printf(c, "FAILED: %s has no multiplier on interface '%s'\n\r", olsr_ip_to_string(&addrbuf, neighbor), ifs->name);
+    return;
+  }
+  if(ifs->cnf->lq_mult == mult) {
+    ifs->cnf->lq_mult = mult->next;
+  } else {
+    struct olsr_lq_mult* mult_temp;
+    for (mult_temp = ifs->cnf->lq_mult; mult_temp; mult_temp=mult_temp->next) {
+      if(mult_temp->next == mult) {
+        mult_temp->next = mult->next;
+        break;
+      }
+    }
+  }
+  free(mult);
   telnet_client_printf(c, "removing lqmult for %s on interface '%s'\n\r", olsr_ip_to_string(&addrbuf, neighbor), ifs->name);
 }
 
-static telnet_cmd_function cmd_lqmult_del(int c, const char* if_name, const union olsr_ip_addr* neighbor)
+static telnet_cmd_function cmd_lqmult_del(const int c, const char* if_name, const union olsr_ip_addr* neighbor)
 {
   if(!if_name)
     cmd_lqmult_foreach_interface(cmd_lqmult_del_if, c, neighbor);
@@ -213,14 +231,20 @@ static telnet_cmd_function cmd_lqmult_del(int c, const char* if_name, const unio
 }
 
 /* ****** GET ****** */
-static void cmd_lqmult_get_if(const struct olsr_if *ifs, int c, const union olsr_ip_addr* neighbor)
+static void cmd_lqmult_get_if(const struct olsr_if *ifs, const int c, const union olsr_ip_addr* neighbor)
 {
   struct ipaddr_str addrbuf;
+  struct olsr_lq_mult* mult;
 
   if(!ifs)
     return;
 
-  telnet_client_printf(c, "retreiving lqmult for %s on interface '%s'\n\r", olsr_ip_to_string(&addrbuf, neighbor), ifs->name);
+  mult = cmd_lqmult_find_neighbor(ifs, neighbor);
+  if(!mult) {
+    telnet_client_printf(c, "FAILED: %s has no multiplier on interface '%s'\n\r", olsr_ip_to_string(&addrbuf, neighbor), ifs->name);
+    return;
+  }
+  telnet_client_printf(c, "%s: %0.2f\n\r", ifs->name, cmd_lqmult_value_as_double(mult->value));
 }
 
 static telnet_cmd_function cmd_lqmult_get(const int c, const char* if_name, const union olsr_ip_addr* neighbor)
@@ -233,7 +257,7 @@ static telnet_cmd_function cmd_lqmult_get(const int c, const char* if_name, cons
 }
 
 /* ****** LIST ****** */
-static void cmd_lqmult_list_if(const struct olsr_if *ifs, int c)
+static void cmd_lqmult_list_if(const struct olsr_if *ifs, const int c)
 {
   struct olsr_lq_mult *mult;
 
@@ -248,7 +272,7 @@ static void cmd_lqmult_list_if(const struct olsr_if *ifs, int c)
   }
 }
 
-static telnet_cmd_function cmd_lqmult_list(int c, const char* if_name)
+static telnet_cmd_function cmd_lqmult_list(const int c, const char* if_name)
 {
   if(!if_name)
     cmd_lqmult_foreach_interface(cmd_lqmult_list_if, c);
@@ -258,7 +282,7 @@ static telnet_cmd_function cmd_lqmult_list(int c, const char* if_name)
 }
 
 /* ****** FLUSH ****** */
-static void cmd_lqmult_flush_if(const struct olsr_if *ifs, int c)
+static void cmd_lqmult_flush_if(const struct olsr_if *ifs, const int c)
 {
   if(!ifs)
     return;
@@ -271,7 +295,7 @@ static void cmd_lqmult_flush_if(const struct olsr_if *ifs, int c)
   telnet_client_printf(c, "removed all link quality multipliers for interface '%s'\n\r", ifs->name);
 }
 
-static telnet_cmd_function cmd_lqmult_flush(int c, const char* if_name)
+static telnet_cmd_function cmd_lqmult_flush(const int c, const char* if_name)
 {
   if(!if_name)
     cmd_lqmult_foreach_interface(cmd_lqmult_flush_if, c);
