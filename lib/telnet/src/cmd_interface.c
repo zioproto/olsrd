@@ -79,6 +79,54 @@ const char* cmd_interface_get_command(void)
   return cmd_interface_struct.command;
 }
 
+/*
+    This is a short version of what the function
+      olsrd_sanity_check_cnf() @ src/cfgparser/olsrd_conf.c
+    does. Given the knowledge that cnfi and cnf are always different and that there are no
+    interface specific lq_mults this can be shortened up...
+    would be nice if the core would provide a function to do this...
+*/
+static inline void cmd_interface_if_deep_copy(const struct olsr_if *ifs)
+{
+  struct olsr_lq_mult *mult, *mult_temp;
+
+  memcpy((uint8_t*)ifs->cnf, (uint8_t*)olsr_cnf->interface_defaults, sizeof(*ifs->cnf));
+  memset((uint8_t*)ifs->cnfi, 0, sizeof(*ifs->cnfi));
+
+  ifs->cnf->lq_mult=NULL;
+  for (mult = olsr_cnf->interface_defaults->lq_mult; mult; mult=mult->next) {
+    mult_temp=olsr_malloc(sizeof(struct olsr_lq_mult), "telnet inteface add mult_temp");
+    memcpy(mult_temp,mult,sizeof(struct olsr_lq_mult));
+    mult_temp->next=ifs->cnf->lq_mult;
+    ifs->cnf->lq_mult=mult_temp;
+  }
+}
+
+static inline int cmd_interface_holds_mainaddr(const struct interface *const rifs)
+{
+  return (olsr_cnf->ip_version == AF_INET ? ip4equal(&(olsr_cnf->main_addr.v4), &(rifs->int_addr.sin_addr))
+                                          : ip6equal(&(olsr_cnf->main_addr.v6), &(rifs->int6_addr.sin6_addr)));
+}
+
+static inline void cmd_interface_cleanup(struct olsr_if *ifs)
+{
+  if(olsr_cnf->interfaces == ifs) {
+    olsr_cnf->interfaces = ifs->next;
+  } else {
+    struct olsr_if *if_tmp;
+    for (if_tmp = olsr_cnf->interfaces; if_tmp; if_tmp=if_tmp->next) {
+      if(if_tmp->next == ifs) {
+        if_tmp->next = ifs->next;
+        break;
+      }
+    }
+  }
+  free(ifs->name);
+  free(ifs->cnf);
+  free(ifs->cnfi);
+  free(ifs);
+}
+
 
 static telnet_cmd_function cmd_interface_add(int c, const char* name)
 {
@@ -87,35 +135,9 @@ static telnet_cmd_function cmd_interface_add(int c, const char* name)
     telnet_client_printf(c, "FAILED: to add interface '%s', see log output for further information\n\r", name);
     return NULL;
   }
-/*
-  interface config deep copy
-    This is a short version of what the function
-      olsrd_sanity_check_cnf() @ src/cfgparser/olsrd_conf.c
-    does. Given the knowledge that cnfi and cnf are always different and that there are no
-    inteface specific lq_mults.
-    would be nice if the core would provide a function to do this...
-*/
-  memcpy((uint8_t*)ifs->cnf, (uint8_t*)olsr_cnf->interface_defaults, sizeof(*ifs->cnf));
-  memset((uint8_t*)ifs->cnfi, 0, sizeof(*ifs->cnfi));
-  {
-    struct olsr_lq_mult *mult, *mult_temp;
-    ifs->cnf->lq_mult=NULL;
-    for (mult = olsr_cnf->interface_defaults->lq_mult; mult; mult=mult->next) {
-      mult_temp=olsr_malloc(sizeof(struct olsr_lq_mult), "telnet inteface add mult_temp");
-      memcpy(mult_temp,mult,sizeof(struct olsr_lq_mult));
-      mult_temp->next=ifs->cnf->lq_mult;
-      ifs->cnf->lq_mult=mult_temp;
-    }
-  }
-/* end of interface config deep copy */
+  cmd_interface_if_deep_copy(ifs);
   telnet_client_printf(c, "interface %s added\n\r", name);
   return NULL;
-}
-
-static inline int if_holds_mainaddr(const struct interface *const rifs)
-{
-  return (olsr_cnf->ip_version == AF_INET ? ip4equal(&(olsr_cnf->main_addr.v4), &(rifs->int_addr.sin_addr))
-                                          : ip6equal(&(olsr_cnf->main_addr.v6), &(rifs->int6_addr.sin6_addr)));
 }
 
 static telnet_cmd_function cmd_interface_del(int c, const char* name)
@@ -130,29 +152,15 @@ static telnet_cmd_function cmd_interface_del(int c, const char* name)
     return NULL;
   }
   if(ifs->interf) {
-    if(if_holds_mainaddr(ifs->interf)) {
+    if(cmd_interface_holds_mainaddr(ifs->interf)) {
       struct ipaddr_str addrbuf;
       telnet_client_printf(c, "FAILED: '%s' holds the main address (%s) of this instance\n\r", name, olsr_ip_to_string(&addrbuf, &(olsr_cnf->main_addr)));
       return NULL;
     }
     olsr_remove_interface(ifs);
   }
-
 /* also removing interface from global configuration */
-  if(olsr_cnf->interfaces == ifs) {
-    olsr_cnf->interfaces = ifs->next;
-    free(ifs);
-  } else {
-    struct olsr_if *if_tmp;
-    for (if_tmp = olsr_cnf->interfaces; if_tmp; if_tmp=if_tmp->next) {
-      if(if_tmp->next == ifs) {
-        if_tmp->next = ifs->next;
-        free(ifs);
-        break;
-      }
-    }
-  }
-
+  cmd_interface_cleanup(ifs);
   telnet_client_printf(c, "interface %s removed\n\r", name);
   return NULL;
 }
