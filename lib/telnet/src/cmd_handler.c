@@ -58,7 +58,9 @@
 #include "telnet_cmd.h"
 #include "cmd_handler.h"
 
+#ifdef TELNET_FOREIGN_CMDS
 #include "olsr_cfg.h"
+#endif /* TELNET_FOREIGN_CMDS */
 
 static telnet_cmd_function handle_help(int, int, char**);
 struct telnet_cmd_functor cmd_help_functor = { &handle_help };
@@ -163,9 +165,19 @@ static telnet_cmd_function handle_help(int c, int argc, char* argv[])
   case 1:
     for(tmp_cmd = local_dispatch_table; tmp_cmd; tmp_cmd = tmp_cmd->next)
       telnet_client_printf(c, " %-16s %s\n\r", tmp_cmd->command, tmp_cmd->short_help);
+#ifdef TELNET_FOREIGN_CMDS
+    if(telnet_allow_foreign) {
+      for(tmp_cmd = olsr_cnf->telnet_foreign_cmds.table; tmp_cmd; tmp_cmd = tmp_cmd->next)
+        telnet_client_printf(c, " %-16s %s\n\r", tmp_cmd->command, tmp_cmd->short_help);
+    }
+#endif /* TELNET_FOREIGN_CMDS */
     return NULL;
   case 2:
     tmp_cmd = telnet_cmd_find(argv[1]);
+#ifdef TELNET_FOREIGN_CMDS
+    if(!tmp_cmd && telnet_allow_foreign)
+      tmp_cmd = telnet_cmd_find_foreign(argv[1]);
+#endif /* TELNET_FOREIGN_CMDS */
     if(tmp_cmd) {
       telnet_client_printf(c, "%s: %s\n\r\n\r", tmp_cmd->command, tmp_cmd->short_help);
       telnet_print_usage(c, (*tmp_cmd));
