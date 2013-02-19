@@ -58,7 +58,9 @@
 union olsr_ip_addr telnet_listen_ip;
 int telnet_port;
 struct string_list* telnet_enabled_commands;
+#ifdef TELNET_FOREIGN_CMDS
 bool telnet_allow_foreign;
+#endif /* TELNET_FOREIGN_CMDS */
 
 /****************************************************************************
  *                Functions that the plugin MUST provide                    *
@@ -98,7 +100,9 @@ static const struct olsrd_plugin_parameters plugin_parameters[] = {
   {.name = "port",.set_plugin_parameter = &set_plugin_port,.data = &telnet_port},
   {.name = "listen",.set_plugin_parameter = &set_plugin_ipaddress,.data = &telnet_listen_ip},
   {.name = "enable",.set_plugin_parameter = &add_plugin_string_list,.data = &telnet_enabled_commands},
+#ifdef TELNET_FOREIGN_CMDS
   {.name = "allowforeign",.set_plugin_parameter = &set_plugin_boolean,.data = &telnet_allow_foreign},
+#endif /* TELNET_FOREIGN_CMDS */
 };
 
 void
@@ -144,7 +148,9 @@ my_init(void)
     telnet_listen_ip.v6 = in6addr_any;
   }
   telnet_enabled_commands = NULL;
+#ifdef TELNET_FOREIGN_CMDS
   telnet_allow_foreign = false;
+#endif /* TELNET_FOREIGN_CMDS */
 }
 
 /**

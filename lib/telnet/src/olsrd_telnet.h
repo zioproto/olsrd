@@ -58,7 +58,9 @@ struct string_list {
 extern union olsr_ip_addr telnet_listen_ip;
 extern int telnet_port;
 extern struct string_list* telnet_enabled_commands;
+#ifdef TELNET_FOREIGN_CMDS
 extern bool telnet_allow_foreign;
+#endif /* TELNET_FOREIGN_CMDS */
 
 int olsrd_telnet_init(void);
 void olsrd_telnet_exit(void);

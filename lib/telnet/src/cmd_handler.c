@@ -126,9 +126,11 @@ int telnet_cmd_dispatch(int c, int argc, char* argv[])
     return 0;
   }
 
+#ifdef TELNET_FOREIGN_CMDS
   if(telnet_allow_foreign) {
         // TODO: lookup foreign command table
   }
+#endif /* TELNET_FOREIGN_CMDS */
 
   telnet_client_printf(c, "command '%s' unknown - enter help for a list of commands\n\r", argv[0]);
   return -1;
