@@ -58,6 +58,8 @@
 #include "telnet_cmd.h"
 #include "cmd_handler.h"
 
+#include "olsr_cfg.h"
+
 static telnet_cmd_function handle_help(int, int, char**);
 struct telnet_cmd_functor cmd_help_functor = { &handle_help };
 cmd_t cmd_help_struct = {
@@ -80,12 +82,15 @@ static cmd_t* local_dispatch_table = &cmd_quit_struct;
 
 static inline cmd_t* telnet_cmd_find(const char* command)
 {
-  if(!command)
-    return NULL;
-
   telnet_cmd_find_table(local_dispatch_table, command);
-  return NULL;
 }
+
+#ifdef TELNET_FOREIGN_CMDS
+static inline cmd_t* telnet_cmd_find_foreign(const char* command)
+{
+  telnet_cmd_find_table(olsr_cnf->telnet_foreign_cmds.table, command);
+}
+#endif /* TELNET_FOREIGN_CMDS */
 
 int telnet_cmd_add(cmd_t* cmd)
 {
@@ -120,17 +125,18 @@ int telnet_cmd_dispatch(int c, int argc, char* argv[])
     cmd_t* tmp_cmd = telnet_cmd_find(argv[0]);
     if(tmp_cmd)
       cmd_f = tmp_cmd->cmd_function;
+#ifdef TELNET_FOREIGN_CMDS
+    if(telnet_allow_foreign) {
+      tmp_cmd = telnet_cmd_find_foreign(argv[0]);
+      if(tmp_cmd)
+        cmd_f = tmp_cmd->cmd_function;
+    }
+#endif /* TELNET_FOREIGN_CMDS */
   }
   if(cmd_f) {
     telnet_client_set_continue_function(c, cmd_f->f(c, argc, argv));
     return 0;
   }
-
-#ifdef TELNET_FOREIGN_CMDS
-  if(telnet_allow_foreign) {
-        // TODO: lookup foreign command table
-  }
-#endif /* TELNET_FOREIGN_CMDS */
 
   telnet_client_printf(c, "command '%s' unknown - enter help for a list of commands\n\r", argv[0]);
   return -1;

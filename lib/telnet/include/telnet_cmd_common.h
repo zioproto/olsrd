@@ -64,9 +64,12 @@ cmd_t CMD_STRUCT = {                                                            
 #define telnet_cmd_find_table(TABLE, COMMAND)                      \
   do {                                                             \
     cmd_t* tmp_cmd;                                                \
+    if(!COMMAND)                                                   \
+      return NULL;                                                 \
     for(tmp_cmd = TABLE; tmp_cmd; tmp_cmd = tmp_cmd->next)         \
       if(!strcmp(tmp_cmd->command, COMMAND))                       \
         return tmp_cmd;                                            \
+    return NULL;                                                   \
   } while(false)
 
 #define telnet_cmd_add_table(TABLE, CMD)                           \

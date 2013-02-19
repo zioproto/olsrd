@@ -53,8 +53,8 @@
 #ifdef TELNET_FOREIGN_CMDS
 #define telnet_client_quit(C)                                           \
   do {                                                                  \
-    if(olsr_conf->telnet_foreign_cmds.client_quit)                      \
-      olsr_conf->telnet_foreign_cmds.client_quit(C);                    \
+    if(olsr_cnf->telnet_foreign_cmds.client_quit)                       \
+      olsr_cnf->telnet_foreign_cmds.client_quit(C);                     \
   } while(false)
 #else
 #define telnet_client_quit(C) do { } while(false)
@@ -64,8 +64,8 @@
 #ifdef TELNET_FOREIGN_CMDS
 #define telnet_client_printf(C, FMT, ARGS...)                           \
   do {                                                                  \
-    if(olsr_conf->telnet_foreign_cmds.client_printf)                    \
-      olsr_conf->telnet_foreign_cmds.client_printf(C, FMT, ARGS);       \
+    if(olsr_cnf->telnet_foreign_cmds.client_printf)                     \
+      olsr_cnf->telnet_foreign_cmds.client_printf(C, FMT, ARGS);        \
   } while(false)
 #else
 #define telnet_client_printf(C, FMT, ARGS...) do { } while(false)
@@ -77,7 +77,7 @@
     if(!(CMD) || !(CMD)->command || !(CMD)->cmd_function ||             \
        !(CMD)->short_help || !(CMD)->usage_text)                        \
       break;                                                            \
-    telnet_cmd_add_table(olsr_conf->telnet_foreign_cmds.table, (CMD));  \
+    telnet_cmd_add_table(olsr_cnf->telnet_foreign_cmds.table, (CMD));   \
   } while(false)
 #else
 #define telnet_cmd_add(CMD) do { } while(false)
