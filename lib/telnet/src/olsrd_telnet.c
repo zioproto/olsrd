@@ -75,6 +75,7 @@
 #include "cmd_hna.h"
 #include "cmd_interface.h"
 #include "cmd_terminate.h"
+#include "cmd_lqmult.h"
 
 
 #ifdef _WIN32
@@ -97,6 +98,7 @@
 static void enable_command(const char* command)
 {
   CHECK_ENABLE_COMMAND(command, terminate);
+  CHECK_ENABLE_COMMAND(command, lqmult);
   CHECK_ENABLE_COMMAND(command, interface);
   CHECK_ENABLE_COMMAND(command, hna);
 }
@@ -107,6 +109,7 @@ static void telnet_enable_commands(void)
 
   if(!telnet_enabled_commands) {
     enable_command(cmd_terminate_get_command());
+    enable_command(cmd_lqmult_get_command());
     enable_command(cmd_interface_get_command());
     enable_command(cmd_hna_get_command());
     return;

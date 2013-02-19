@@ -15,9 +15,10 @@ functions:
   help       - print usage strings and lists all available commands
 
 Besides that there are commands for altering and inspecting HNA and
-interface lists and a command to terminate the whole olsr daemon. These
-commands can be globally disabled (see PLUGIN CONFIGURATION). The built-in
-commands are always enabled.
+interface lists. A command that allows to alter LQ multipliers and a command 
+to terminate the whole olsr daemon. 
+These commands can be globally disabled (see PLUGIN CONFIGURATION). The 
+built-in commands are always enabled.
 
 If you want to add additional commands (from another plugin) you have to
 write something like this:
@@ -87,6 +88,7 @@ LoadPlugin "olsrd_telnet.so.0.1"
     # and that depending on 'allowforeign' other plugins may add commands
     #PlParam      "enable" "hna"
     #PlParam      "enable" "interface"
+    #PlParam      "enable" "lqmult"
     #PlParam      "enable" "terminate"
 
     # allow other plugins to add commands to the command table
