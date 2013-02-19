@@ -112,6 +112,12 @@ static telnet_cmd_function cmd_interface_add(int c, const char* name)
   return NULL;
 }
 
+static inline int if_holds_mainaddr(const struct interface *const rifs)
+{
+  return (olsr_cnf->ip_version == AF_INET ? ip4equal(&(olsr_cnf->main_addr.v4), &(rifs->int_addr.sin_addr))
+                                          : ip6equal(&(olsr_cnf->main_addr.v6), &(rifs->int6_addr.sin6_addr)));
+}
+
 static telnet_cmd_function cmd_interface_del(int c, const char* name)
 {
   struct olsr_if *ifs = olsrif_ifwithname(name);
@@ -123,8 +129,14 @@ static telnet_cmd_function cmd_interface_del(int c, const char* name)
     telnet_client_printf(c, "FAILED: '%s' is the sole interface and olsrd is configured not to run without interfaces\n\r", name);
     return NULL;
   }
-  if(ifs->interf)
+  if(ifs->interf) {
+    if(if_holds_mainaddr(ifs->interf)) {
+      struct ipaddr_str addrbuf;
+      telnet_client_printf(c, "FAILED: '%s' holds the main address (%s) of this instance\n\r", name, olsr_ip_to_string(&addrbuf, &(olsr_cnf->main_addr)));
+      return NULL;
+    }
     olsr_remove_interface(ifs);
+  }
 
 /* also removing interface from global configuration */
   if(olsr_cnf->interfaces == ifs) {
