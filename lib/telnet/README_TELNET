@@ -40,7 +40,7 @@ static telnet_cmd_function handle_mycmd(int c, int argc, char* argv[])
 
   /* do something useful or cool or at least funny ;) */
   if(success) {
-    telnet_client_printf(c, "it worked!");
+    telnet_client_printf(c, "it worked!\n\r");
     return NULL;
   }
 
@@ -54,11 +54,6 @@ You can then enable your command by calling:
 <snip>
 telnet_cmd_add(&cmd_mycmd_struct);
 </snip>
-
-If you want to dynamically allocate your command struct you may do so,
-but you have to free the memory yourself after removal. The telnet_cmd_remove
-function returns a pointner to your original struct. Take a look at cmd_handler.c
-fo find out how to create a valid cmd struct (i.e. like cmd_help_struct).
 
 If your command needs additional input of the user your handle function may return 
 a pointer to a continue function which will be called next time the user enters 

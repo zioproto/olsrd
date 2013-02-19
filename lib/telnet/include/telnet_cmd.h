@@ -74,10 +74,11 @@
 #ifdef TELNET_FOREIGN_CMDS
 #define telnet_cmd_add(CMD)                                             \
   do {                                                                  \
-    if(!CMD || !CMD->command || !CMD->cmd_function ||                   \
-       !CMD->short_help || !CMD->usage_text)                            \
+    cmd_t* cmd_ptr = CMD;                                               \
+    if(!cmd_ptr || !cmd_ptr->command || !cmd_ptr->cmd_function ||       \
+       !cmd_ptr->short_help || !cmd_ptr->usage_text)                    \
       break;                                                            \
-    telnet_cmd_add_table(olsr_cnf->telnet_foreign_cmds.table, CMD);     \
+    telnet_cmd_add_table(olsr_cnf->telnet_foreign_cmds.table, cmd_ptr); \
   } while(false)
 #else
 #define telnet_cmd_add(CMD) do { } while(false)
