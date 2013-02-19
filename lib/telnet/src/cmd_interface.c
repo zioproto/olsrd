@@ -122,6 +122,11 @@ static inline void cmd_interface_cleanup(struct olsr_if *ifs)
     }
   }
   free(ifs->name);
+  do {
+    struct olsr_lq_mult *mult_temp = ifs->cnf->lq_mult->next;
+    free(ifs->cnf->lq_mult);
+    ifs->cnf->lq_mult = mult_temp;
+  } while(ifs->cnf->lq_mult);
   free(ifs->cnf);
   free(ifs->cnfi);
   free(ifs);
