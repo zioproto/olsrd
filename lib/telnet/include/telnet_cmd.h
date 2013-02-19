@@ -62,10 +62,10 @@
 
 
 #ifdef TELNET_FOREIGN_CMDS
-#define telnet_client_printf(C, FMT, ARGS...)                           \
+#define telnet_client_printf(C, FMT_ARGS...)                            \
   do {                                                                  \
     if(olsr_cnf->telnet_foreign_cmds.client_printf)                     \
-      olsr_cnf->telnet_foreign_cmds.client_printf(C, FMT, ARGS);        \
+      olsr_cnf->telnet_foreign_cmds.client_printf(C, FMT_ARGS);         \
   } while(false)
 #else
 #define telnet_client_printf(C, FMT, ARGS...) do { } while(false)
