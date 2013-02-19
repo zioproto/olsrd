@@ -50,13 +50,37 @@
 
 #include "telnet_cmd_common.h"
 
-void telnet_client_quit(int);
-void telnet_client_printf(int, const char*, ...) __attribute__ ((format (printf, 2, 3)));
+#ifdef TELNET_FOREIGN_CMDS
+#define telnet_client_quit(C)                                           \
+  do {                                                                  \
+    if(olsr_conf->telnet_foreign_cmds.client_quit)                      \
+      olsr_conf->telnet_foreign_cmds.client_quit(C);                    \
+  } while(false)
+#else
+#define telnet_client_quit(C) do { } while(false)
+#endif /* TELNET_FOREIGN_CMDS */
 
-typedef struct {
-  cmd_t* table;
-  void (*client_quit)(int);
-  void (*client_printf)(int, const char*, ...);
-} telnet_foreign_cmd_t;
+
+#ifdef TELNET_FOREIGN_CMDS
+#define telnet_client_printf(C, FMT, ARGS...)                           \
+  do {                                                                  \
+    if(olsr_conf->telnet_foreign_cmds.client_printf)                    \
+      olsr_conf->telnet_foreign_cmds.client_printf(C, FMT, ARGS);       \
+  } while(false)
+#else
+#define telnet_client_printf(C, FMT, ARGS...) do { } while(false)
+#endif /* TELNET_FOREIGN_CMDS */
+
+#ifdef TELNET_FOREIGN_CMDS
+#define telnet_cmd_add(CMD)                                             \
+  do {                                                                  \
+    if(!(CMD) || !(CMD)->command || !(CMD)->cmd_function ||             \
+       !(CMD)->short_help || !(CMD)->usage_text)                        \
+      break;                                                            \
+    telnet_cmd_add_table(olsr_conf->telnet_foreign_cmds.table, (CMD));  \
+  } while(false)
+#else
+#define telnet_cmd_add(CMD) do { } while(false)
+#endif /* TELNET_FOREIGN_CMDS */
 
 #endif /* _OLSRD_TELNET_CMD */

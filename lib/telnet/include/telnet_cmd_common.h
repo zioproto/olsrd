@@ -48,20 +48,7 @@
 #ifndef _OLSRD_TELNET_CMD_COMMON
 #define _OLSRD_TELNET_CMD_COMMON
 
-#include <stdarg.h>
-
-typedef struct telnet_cmd_functor* telnet_cmd_function;
-struct telnet_cmd_functor {
-  telnet_cmd_function (*f)(int, int, char**);
-};
-
-typedef struct telnet_cmd_struct {
-  const char* command;
-  telnet_cmd_function cmd_function;
-  const char* short_help;
-  const char* usage_text;
-  struct telnet_cmd_struct* next;
-} cmd_t;
+#include "telnet_cmd_core.h"
 
 #define STR_CONCAT(x, y) x ## y
 #define DEFINE_TELNET_CMD(CMD_STRUCT, CMD_CODE, HANDLE_FUNCTION, SHORT_HELP, USAGE)     \
@@ -73,8 +60,6 @@ cmd_t CMD_STRUCT = {                                                            
   USAGE,                                                                                \
   NULL                                                                                  \
 }
-
-
 
 #define telnet_cmd_find_table(TABLE, COMMAND)                      \
   do {                                                             \
@@ -111,8 +96,6 @@ cmd_t CMD_STRUCT = {                                                            
     }                                                              \
   } while(false)
 
-int telnet_cmd_add(cmd_t*);
-cmd_t* telnet_cmd_remove(const char*);
 #define telnet_print_usage(c, cmd) telnet_client_printf(c, "usage:\n\r%s\n\r", cmd.usage_text)
 
 #endif /* _OLSRD_TELNET_CMD_COMMON */

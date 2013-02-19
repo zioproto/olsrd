@@ -50,4 +50,7 @@
 
 #include "../include/telnet_cmd_common.h"
 
+int telnet_cmd_add(cmd_t*);
+cmd_t* telnet_cmd_remove(const char*);
+
 #endif /* _OLSRD_TELNET_CMD */
