@@ -80,17 +80,11 @@ const char* cmd_lqmult_get_command(void)
   return cmd_lqmult_struct.command;
 }
 
-
-static telnet_cmd_function cmd_lqmult_add(int c, const char* if_name)
-{
-  struct olsr_if *ifs = olsrif_ifwithname(if_name);
-  if(!ifs) {
-    telnet_client_printf(c, "FAILED: no such interface '%s'\n\r", if_name);
-    return NULL;
-  }
-
-  telnet_client_printf(c, "adding lqmult to interface '%s'\n\r", if_name);
-
+/* struct olsr_lq_mult { */
+/*   union olsr_ip_addr addr; */
+/*   uint32_t value; */
+/*   struct olsr_lq_mult *next; */
+/* }; */
   /* struct olsr_lq_mult *mult, *mult_temp; */
   /* ifs->cnf->lq_mult=NULL; */
   /* for (mult = olsr_cnf->interface_defaults->lq_mult; mult; mult=mult->next) { */
@@ -99,77 +93,94 @@ static telnet_cmd_function cmd_lqmult_add(int c, const char* if_name)
   /*   mult_temp->next=ifs->cnf->lq_mult; */
   /*   ifs->cnf->lq_mult=mult_temp; */
   /* } */
+
+
+static telnet_cmd_function cmd_lqmult_add(int c, struct olsr_if *ifs)
+{
+  telnet_client_printf(c, "adding lqmult to interface '%s'\n\r", ifs->name);
   return NULL;
 }
 
-static telnet_cmd_function cmd_lqmult_update(int c, const char* if_name)
+static telnet_cmd_function cmd_lqmult_update(int c, struct olsr_if *ifs)
+{
+  telnet_client_printf(c, "updating lqmult on interface '%s'\n\r", ifs->name);
+  return NULL;
+}
+
+static telnet_cmd_function cmd_lqmult_del(int c, struct olsr_if *ifs)
+{
+  telnet_client_printf(c, "removing lqmult on interface '%s'\n\r", ifs->name);
+  return NULL;
+}
+
+static telnet_cmd_function cmd_lqmult_get(int c, const struct olsr_if *ifs)
+{
+  telnet_client_printf(c, "retreiving lqmult on interface '%s'\n\r", ifs->name);
+  return NULL;
+}
+
+static void cmd_lqmult_list(int c, const struct olsr_if *ifs)
+{
+  struct olsr_lq_mult *mult;
+  telnet_client_printf(c, " %s:\n\r", ifs->name);
+  for(mult = ifs->cnf->lq_mult; mult; mult=mult->next) {
+    struct ipaddr_str addrbuf;
+    const char* n = (ipequal(&(mult->addr), &olsr_ip_zero)) ? "default" : olsr_ip_to_string(&addrbuf, &(mult->addr));
+    telnet_client_printf(c, "  %s: %0.2f\n\r", n, (double)(mult->value) / (double)65536.0);
+  }
+}
+
+static struct olsr_if* cmd_lqmult_get_ifs(int c, const char* if_name)
 {
   struct olsr_if *ifs = olsrif_ifwithname(if_name);
   if(!ifs) {
     telnet_client_printf(c, "FAILED: no such interface '%s'\n\r", if_name);
     return NULL;
   }
-
-  telnet_client_printf(c, "updating lqmult on interface '%s'\n\r", if_name);
-  return NULL;
-}
-
-static telnet_cmd_function cmd_lqmult_del(int c, const char* if_name)
-{
-  struct olsr_if *ifs = olsrif_ifwithname(if_name);
-  if(!ifs) {
-    telnet_client_printf(c, "FAILED: no such interface '%s'\n\r", if_name);
-    return NULL;
-  }
-
-  telnet_client_printf(c, "removing lqmult on interface '%s'\n\r", if_name);
-  return NULL;
-}
-
-static telnet_cmd_function cmd_lqmult_get(int c, const char* if_name)
-{
-  struct olsr_if *ifs = olsrif_ifwithname(if_name);
-  if(!ifs) {
-    telnet_client_printf(c, "FAILED: no such interface '%s'\n\r", if_name);
-    return NULL;
-  }
-
-  telnet_client_printf(c, "retreiving lqmult on interface '%s'\n\r", if_name);
-  return NULL;
+  return ifs;
 }
 
 static telnet_cmd_function handle_lqmult(int c, int argc, char* argv[])
 {
   if((argc == 2 || argc == 3) && !strcmp(argv[1], "list")) {
-    const struct olsr_if *ifs;
-    for (ifs = olsr_cnf->interfaces; ifs != NULL; ifs = ifs->next)
-      telnet_client_printf(c, " %-10s (%s)\n\r", ifs->name, (!(ifs->cnf->lq_mult)) ? "-" : "+" );
-
+    if(argc == 2) {
+      const struct olsr_if *ifs;
+      for (ifs = olsr_cnf->interfaces; ifs != NULL; ifs = ifs->next)
+        cmd_lqmult_list(c, ifs);
+    } else {
+      const struct olsr_if *ifs = cmd_lqmult_get_ifs(c, argv[2]);
+      if(!ifs)
+        return NULL;
+      cmd_lqmult_list(c, ifs);
+    }
     return NULL;
   }
 
-  if(argc < 4) {
-    telnet_print_usage(c, cmd_lqmult_struct);
-    return NULL;
-  }
+  if(argc > 3) {
+    struct olsr_if *ifs = cmd_lqmult_get_ifs(c, argv[2]);
+    if(!ifs)
+      return NULL;
 
-  if(!strcmp(argv[1], "get")) {
-    return cmd_lqmult_get(c, argv[2]);
-  }
-  else if(!strcmp(argv[1], "del")) {
-    return cmd_lqmult_del(c, argv[2]);
-  }
+        // TODO: parse neigbor from argv[3]
 
-  if(argc < 5) {
-    telnet_print_usage(c, cmd_lqmult_struct);
-    return NULL;
-  }
+    if(!strcmp(argv[1], "get")) {
+      return cmd_lqmult_get(c, ifs);
+    }
+    else if(!strcmp(argv[1], "del")) {
+      return cmd_lqmult_del(c, ifs);
+    }
 
-  if(!strcmp(argv[1], "add")) {
-    return cmd_lqmult_add(c, argv[2]);
-  }
-  else if(!strcmp(argv[1], "update")) {
-    return cmd_lqmult_update(c, argv[2]);
+    if(argc == 5) {
+
+          // TODO: parse value from argv[4]
+
+      if(!strcmp(argv[1], "add")) {
+        return cmd_lqmult_add(c, ifs);
+      }
+      else if(!strcmp(argv[1], "update")) {
+        return cmd_lqmult_update(c, ifs);
+      }
+    }
   }
 
   telnet_print_usage(c, cmd_lqmult_struct);
