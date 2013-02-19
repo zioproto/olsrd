@@ -91,6 +91,6 @@ static telnet_cmd_function handle_terminate(int c, int argc, char* argv[] __attr
     telnet_print_usage(c, cmd_terminate_struct);
     return NULL;
   }
-  telnet_client_printf(c, "really want to quit olsr daemon (type uppercase YES to confirm)? ");
+  telnet_client_printf(c, "really want to quit olsr daemon?\n\r(type uppercase YES to confirm) .. ");
   return &handle_inquiry_functor;
 }
