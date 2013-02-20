@@ -1,73 +1,25 @@
+TELNET PLUGIN for OLSRd
+=======================
 
-The telnet plugin aims to enable the user to update some of olsrd's
-configuration at runtime without the need to restart the whole daemon.
+The telnet plugin runs a small telnet server which enables the user to
+update parts of the olsrd configuration at runtime without the need to
+restart the whole daemon.
 For now adding and removing interfaces as well as adding and removing
 HNA entries is supported, but others may follow.
-Other plugins may also use this plugin to add additional commands.
+Other plugins can add their own commands (see FOREIGN COMMANDS)
+
 
 PLUGIN USAGE
 ============
 
 To use the plugin one just has to enable the plugin (see PLUGIN CONFIGURATION)
 and connect to it using telnet, nc or the like. There are two built-in
-functions:
-  quit       - terminates the client connection
-  help       - print usage strings and lists all available commands
-
+functions quit and help.
 Besides that there are commands for altering and inspecting HNA and
 interface lists. A command that allows to alter LQ multipliers and a command
 to terminate the whole olsr daemon.
 These commands can be globally disabled (see PLUGIN CONFIGURATION). The
 built-in commands are always enabled.
-
-If you want to add additional commands (from another plugin) you have to
-write something like this:
-
-<snip>
-#include "../../telnet/include/telnet_cmd.h"
-
-DEFINE_TELNET_CMD(cmd_mycmd_struct,
-                  "mycmd", handle_mycmd,
-                  "short help text",
-                  " usage text (line 1)\n\r"
-                  " usage text (line 2)");
-
-static telnet_cmd_function handle_mycmd(int c, int argc, char* argv[])
-{
-  if(argc != 1) {
-    telnet_print_usage(c, cmd_mycmd_struct);
-    return NULL;
-  }
-
-  /* do something useful or cool or at least funny ;) */
-  if(success) {
-    telnet_client_printf(c, "it worked!\n\r");
-    return NULL;
-  }
-
-  telnet_print_usage(c, cmd_mycmd_struct);
-  return NULL;
-}
-</snip>
-
-You can then enable your command by calling:
-
-<snip>
-telnet_cmd_add(&cmd_mycmd_struct);
-</snip>
-
-your handle function may use the following functions:
- - telnet_print_usage(c, cmd_t)        print the usage string for the command
- - telnet_client_printf(c, fmt, ...)   print something to the connected client
- - telnet_client_quit(c)               terminate the client connection
-
-To keep the interface header-only all these functions as well as `telnet_cmd_add`
-are implemented as macros.
-If your command needs additional input from the user, your handle function may
-return a pointer to a continue function which will be called next time the user
-enters something, bypassing the normal command lookup. This may be done
-repeatedly until the command is completed. The `terminate` command is a nice
-example for such an inquiry.
 
 
 PLUGIN CONFIGURATION
@@ -110,7 +62,7 @@ quit
 help
 ----
  This command can be used to print a list of all available commands or the usage
- for a given command.
+ of a given command.
 
  Usage:
    help [<command>]
@@ -141,13 +93,13 @@ interface
 
 lqmult
 ------
- This command alters LQ multipliers for an given neighbor for one or all
+ This command alters LQ multipliers for an given neighbor on one or all
  interfaces. `add` inserts a new multiplier (error if exists), `update` changes
- an existing multiplier (error if not exitst). `set` adds or updates a
+ an existing multiplier (error if not exists). `set` adds or updates a
  multiplier. Multipliers can be removed using `del` or `flush`. `del` only
- deletes one multiplier wheras `flush` removes all multipliers from a given
+ deletes one multiplier whereas `flush` removes all multipliers from a given
  or from all interfaces. `get` can be used to retrieve the current  multiplier
- value(s) for a given neighbor. `list` prints all multipliers by interface.
+ value(s) of a given neighbor. `list` prints all multipliers by interface.
 
  Usage:
    lqmult (add|update|set) (<interface>|*) <neigbor> <value>
@@ -171,3 +123,56 @@ Example Usage
 The tools directory contains some scripts which use `empty` to add/remove
 HNA entries. This is particulary useful if you want to update the HNA list
 from shell scripts whithout the need to restart the whole daemon.
+
+
+FOREIGN COMMANDS
+================
+
+If you want to add custom commands (from an other plugin) you have to
+write something like this:
+
+<snip>
+#include "../../telnet/include/telnet_cmd.h"
+
+DEFINE_TELNET_CMD(cmd_mycmd_struct,
+                  "mycmd", handle_mycmd,
+                  "short help text",
+                  " usage text (line 1)\n\r"
+                  " usage text (line 2)");
+
+static telnet_cmd_function handle_mycmd(int c, int argc, char* argv[])
+{
+  if(argc != 1) {
+    telnet_print_usage(c, cmd_mycmd_struct);
+    return NULL;
+  }
+
+  /* do something useful or cool or at least funny ;) */
+  if(success) {
+    telnet_client_printf(c, "it worked!\n\r");
+    return NULL;
+  }
+
+  telnet_print_usage(c, cmd_mycmd_struct);
+  return NULL;
+}
+</snip>
+
+You can enable your command by calling:
+
+<snip>
+telnet_cmd_add(&cmd_mycmd_struct);
+</snip>
+
+your handle function may use the following functions:
+ - telnet_print_usage(c, cmd_t)        print the usage string for the command
+ - telnet_client_printf(c, fmt, ...)   print something to the connected client
+ - telnet_client_quit(c)               terminate the client connection
+
+To keep the interface header-only all these functions as well as `telnet_cmd_add`
+are implemented as macros.
+If your command needs additional input from the user, your handle function may
+return a pointer to a continue function which will be called next time the user
+enters something, bypassing the normal command lookup. This may be done
+repeatedly until the command is completed. The `terminate` command is a nice
+example for such an inquiry.
