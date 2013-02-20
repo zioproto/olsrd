@@ -7,6 +7,9 @@ PORT=2023
 OLSRD_CONNECT_CMD="nc $HOST $PORT"
 #OLSRD_CONNECT_CMD="telnet $HOST $PORT"
 
+# wait OLSRD_TIMEOUT seconds for command response
+OLSRD_TIMEOUT=1
+
 # this connects to olsrd and creates the communication buffers
 # the connection stays online until the calling script (example.sh)
 # terminiates

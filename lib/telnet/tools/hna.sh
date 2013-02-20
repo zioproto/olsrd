@@ -18,8 +18,8 @@ function olsrd_disconnect()
 ####################
 function olsrd_hna_add()
 {
-  empty -s "hna add $1\n" || return 1
-  empty -t 1 -w "^added" "" "^FAILED:" "" 
+  empty -s "hna add $1\n" 2>&1 > /dev/null || return 1
+  empty -t $OLSRD_TIMEOUT -w "^added" "" "^FAILED:" "" 2>&1 > /dev/null
   if [ $? -ne 1 ]; then
     return 1
   fi
@@ -28,8 +28,8 @@ function olsrd_hna_add()
 
 function olsrd_hna_del()
 {
-  empty -s "hna del $1\n" || return 1
-  empty -t 1 -w "^removed" "" "^FAILED:" "" 
+  empty -s "hna del $1\n" 2>&1 > /dev/null || return 1
+  empty -t $OLSRD_TIMEOUT -w "^removed" "" "^FAILED:" "" 2>&1 > /dev/null
   if [ $? -ne 1 ]; then
     return 1
   fi

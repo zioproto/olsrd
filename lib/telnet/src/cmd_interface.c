@@ -96,7 +96,7 @@ static inline void cmd_interface_if_deep_copy(const struct olsr_if *ifs)
 
   ifs->cnf->lq_mult=NULL;
   for (mult = olsr_cnf->interface_defaults->lq_mult; mult; mult=mult->next) {
-    mult_temp=olsr_malloc(sizeof(struct olsr_lq_mult), "telnet inteface add mult_temp");
+    mult_temp=olsr_malloc(sizeof(struct olsr_lq_mult), "telnet interface add mult_temp");
     memcpy(mult_temp,mult,sizeof(struct olsr_lq_mult));
     mult_temp->next=ifs->cnf->lq_mult;
     ifs->cnf->lq_mult=mult_temp;
@@ -170,7 +170,7 @@ static telnet_cmd_function cmd_interface_enable(int c, const char* name)
   }
 
   ifs->cnf->autodetect_chg = 1;
-  telnet_client_printf(c, "interface '%s' enabled\n\r", name);
+  telnet_client_printf(c, "enabled interface '%s'\n\r", name);
   return NULL;
 }
 
@@ -185,7 +185,7 @@ static telnet_cmd_function cmd_interface_disable(int c, const char* name)
     olsr_remove_interface(ifs);
   ifs->cnf->autodetect_chg = 0;
 
-  telnet_client_printf(c, "interface %s disabled\n\r", name);
+  telnet_client_printf(c, "disabled interface %s\n\r", name);
   return NULL;
 }
 
@@ -198,7 +198,7 @@ static telnet_cmd_function cmd_interface_add(int c, const char* name)
     return NULL;
   }
   cmd_interface_if_deep_copy(ifs);
-  telnet_client_printf(c, "interface %s added\n\r", name);
+  telnet_client_printf(c, "added interface %s\n\r", name);
   return NULL;
 }
 
@@ -213,7 +213,7 @@ static telnet_cmd_function cmd_interface_del(int c, const char* name)
     olsr_remove_interface(ifs);
   cmd_interface_cleanup(ifs);
 
-  telnet_client_printf(c, "interface %s removed\n\r", name);
+  telnet_client_printf(c, "removed interface %s\n\r", name);
   return NULL;
 }
 

@@ -116,7 +116,7 @@ static telnet_cmd_function handle_hna(int c, int argc, char* argv[])
   }
 
   if(olsr_string_to_prefix(olsr_cnf->ip_version, &hna_entry, argv[2])) {
-    telnet_client_printf(c, "address invalid\n\r");
+    telnet_client_printf(c, "FAILED: address invalid\n\r");
     return NULL;
   }
 

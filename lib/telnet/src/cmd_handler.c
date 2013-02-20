@@ -140,7 +140,7 @@ int telnet_cmd_dispatch(int c, int argc, char* argv[])
     return 0;
   }
 
-  telnet_client_printf(c, "command '%s' unknown - enter help for a list of commands\n\r", argv[0]);
+  telnet_client_printf(c, "FAILED: command '%s' unknown - enter help for a list of commands\n\r", argv[0]);
   return -1;
 }
 
@@ -182,7 +182,7 @@ static telnet_cmd_function handle_help(int c, int argc, char* argv[])
       telnet_client_printf(c, "%s: %s\n\r\n\r", tmp_cmd->command, tmp_cmd->short_help);
       telnet_print_usage(c, (*tmp_cmd));
     } else
-      telnet_client_printf(c, "command '%s' unknown\n\r", argv[1]);
+      telnet_client_printf(c, "FAILED: command '%s' unknown\n\r", argv[1]);
     return NULL;
   default:
     telnet_print_usage(c, cmd_help_struct);

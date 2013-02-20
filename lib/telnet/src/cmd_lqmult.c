@@ -260,8 +260,8 @@ static void cmd_lqmult_del_if(const struct olsr_if *ifs, const int c, const unio
     }
   }
   free(mult);
-  telnet_client_printf(c, "removing lqmult for %s on interface '%s'\n\r", olsr_ip_to_string(&addrbuf, neighbor), ifs->name);
   cmd_lqmult_update_multiplier(ifs);
+  telnet_client_printf(c, "removed lqmult for %s on interface '%s'\n\r", olsr_ip_to_string(&addrbuf, neighbor), ifs->name);
 }
 
 static telnet_cmd_function cmd_lqmult_del(const int c, const char* if_name, const union olsr_ip_addr* neighbor)
@@ -335,7 +335,7 @@ static void cmd_lqmult_flush_if(const struct olsr_if *ifs, const int c)
     free(ifs->cnf->lq_mult);
     ifs->cnf->lq_mult = mult_temp;
   }
-  telnet_client_printf(c, "removed all link quality multipliers for interface '%s'\n\r", ifs->name);
+  telnet_client_printf(c, "flushed link quality multipliers for interface '%s'\n\r", ifs->name);
   cmd_lqmult_update_multiplier(ifs);
 }
 
