@@ -67,7 +67,7 @@ If your command needs additional input from the user, your handle function may
 return a pointer to a continue function which will be called next time the user
 enters something, bypassing the normal command lookup. This may be done
 repeatedly until the command is completed. The `terminate` command is a nice
-example for such a inquiry.
+example for such an inquiry.
 
 
 PLUGIN CONFIGURATION
@@ -131,7 +131,7 @@ interface
  settings (LQ multipliers, timings,...) get lost. To preserve the configuration
  `disable` may be used. A disabled interface can be re-enbaled using `enable`.
  The `status` command prints current addresses and some other information for a
- specific interface.
+ specific interface. `list` prints all interfaces and their current status.
 
  Usage:
    interface (enable|disable) <name>
