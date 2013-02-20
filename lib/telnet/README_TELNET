@@ -15,9 +15,9 @@ functions:
   help       - print usage strings and lists all available commands
 
 Besides that there are commands for altering and inspecting HNA and
-interface lists. A command that allows to alter LQ multipliers and a command 
-to terminate the whole olsr daemon. 
-These commands can be globally disabled (see PLUGIN CONFIGURATION). The 
+interface lists. A command that allows to alter LQ multipliers and a command
+to terminate the whole olsr daemon.
+These commands can be globally disabled (see PLUGIN CONFIGURATION). The
 built-in commands are always enabled.
 
 If you want to add additional commands (from another plugin) you have to
@@ -95,6 +95,74 @@ LoadPlugin "olsrd_telnet.so.0.1"
     # by default this is not allowed
     #PlParam      "allowforeign" "yes"
 }
+
+
+Command Reference
+=================
+
+quit
+----
+ This command terminates the client connection.
+
+ Usage:
+   quit
+
+help
+----
+ This command can be used to print a list of all available commands or the usage
+ for a given command.
+
+ Usage:
+   help [<command>]
+
+hna
+---
+ This command can be used to add, remove and list HNA entries.
+
+ Usage:
+   hna (add|del) <address>/<netmask>
+   hna list
+
+interface
+---------
+ This command enables/disables, adds/removes or lists interfaces to/from olsrd.
+ Newly added interfaces inherit their configuration (includeing LQ multipliers)
+ from interface defaults. If an interface gets removed and re-added all special
+ settings (LQ multipliers, timings,...) get lost. To preserve the configuration
+ `disable` may be used. A disabled interface can be re-enbaled using `enable`.
+ The `status` command prints current addresses and some other information for a
+ specific interface.
+
+ Usage:
+   interface (enable|disable) <name>
+   interface (add|del) <name>
+   interface status <name>
+   interface list
+
+lqmult
+------
+ This command alters LQ multipliers for an given neighbor for one or all
+ interfaces. `add` inserts a new multiplier (error if exists), `update` changes
+ an existing multiplier (error if not exitst). `set` adds or updates a
+ multiplier. Multipliers can be removed using `del` or `flush`. `del` only
+ deletes one multiplier wheras `flush` removes all multipliers from a given
+ or from all interfaces. `get` can be used to retrieve the current  multiplier
+ value(s) for a given neighbor. `list` prints all multipliers by interface.
+
+ Usage:
+   lqmult (add|update|set) (<interface>|*) <neigbor> <value>
+   lqmult del (<interface>|*) <neigbor>
+   lqmult get (<interface>|*) <neigbor>
+   lqmult flush [<interface>]
+   lqmult list [<interface>]
+
+terminate
+---------
+ This command terminates olsrd. To prevent accidential invocation this command
+ must be aknowledged.
+
+ Usage:
+   terminate
 
 
 Example Usage
