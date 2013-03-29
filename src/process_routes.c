@@ -212,6 +212,14 @@ olsr_add_kernel_route(struct rt_entry *rt)
       OLSR_PRINTF(1, "KERN: ERROR adding %s: %s\n", routestr, err_msg);
 
       olsr_syslog(OLSR_LOG_ERR, "Add route %s: %s", routestr, err_msg);
+
+      //Delete the route that failed to be written in netlink socket
+      if (error == EINVAL ) {
+        avl_delete(&routingtree, &rt->rt_tree_node);
+        olsr_cookie_free(rt_mem_cookie, rt);
+        OLSR_PRINTF(3, "Removing invalid kernel route\n");
+      }
+
     } else {
       /* route addition has suceeded */
 
@@ -323,6 +331,7 @@ void
 olsr_update_rib_routes(void)
 {
   struct rt_entry *rt;
+  int16_t error;
 
   OLSR_PRINTF(3, "Updating kernel routes...\n");
 
@@ -336,11 +345,18 @@ olsr_update_rib_routes(void)
     if (!rt->rt_path_tree.count) {
 
       /* oops, all routes are gone - flush the route head */
-  
-      if (olsr_delete_kernel_route(rt) == 0) {
-        /*only remove if deletion was successful*/
+      error = olsr_delete_kernel_route(rt);
+      if (error == 0) {
+        /*remove if deletion was successful*/
         avl_delete(&routingtree, &rt->rt_tree_node);
         olsr_cookie_free(rt_mem_cookie, rt);
+      } else if (error == EINVAL) {
+        /*remove if route is invalid for the Kernel*/
+        avl_delete(&routingtree, &rt->rt_tree_node);
+        olsr_cookie_free(rt_mem_cookie, rt);
+        OLSR_PRINTF(3, "Removing invalid kernel route\n");
+      } else {
+        OLSR_PRINTF(3, "I am doing nothing but I cannot delete a route from the kernel with error code %d\n", error);
       }
 
       continue;
