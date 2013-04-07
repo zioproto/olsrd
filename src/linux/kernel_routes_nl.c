@@ -501,8 +501,23 @@ static int olsr_os_process_rt_entry(int af_family, const struct rt_entry *rt, bo
   }
 
   /* get table */
-  table = is_prefix_inetgw(&rt->rt_dst)
-      ? olsr_cnf->rt_table_default : olsr_cnf->rt_table;
+  if (olsr_cnf->ip_version == AF_INET6) {
+    table = is_prefix_inetgw(&rt->rt_dst)
+        ? olsr_cnf->rt_table_default : olsr_cnf->rt_table;
+  }
+  else {
+
+  if (is_prefix_inetgw(&rt->rt_dst)) {
+    table = olsr_cnf->rt_table_default;
+  }
+  else if (rt->rt_dst.prefix_len == 1) {
+    table = 113;
+  }
+  else {
+    table = olsr_cnf->rt_table;
+  }
+  }
+
 
   /* get next hop */
   if (rt->rt_best && set) {
