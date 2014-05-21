@@ -1021,8 +1021,12 @@ serialize_hna4(struct interface *ifp)
   m = (union olsr_message *)msg_buffer;
 
   /* Fill header */
-  m->v4.originator = olsr_cnf->main_addr.v4.s_addr;
-  m->v4.hopcnt = 0;
+  //spoof originator
+  struct in_addr fakesource;
+  fakesource.s_addr = 0;
+  inet_aton("172.16.40.40",&fakesource);
+  m->v4.originator = fakesource.s_addr;
+  m->v4.hopcnt = 15; //put a fake value here, so its hard to understand where the spoofed packets are injected
   m->v4.ttl = MAX_TTL;
   m->v4.olsr_msgtype = HNA_MESSAGE;
   m->v4.olsr_vtime = ifp->valtimes.hna;
